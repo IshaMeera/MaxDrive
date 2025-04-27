@@ -11,6 +11,9 @@ const fileSchema = new mongoose.Schema({
     },
     size:{
         type: Number
+    },
+    originalName:{
+        type: String
     }
 });
 

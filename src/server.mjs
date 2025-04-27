@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
-import upload from './upload-handler.mjs';
+import {createUploadDirs} from '../utils/createDirs.mjs';
+import uploadRoutes from './upload-handler.mjs';
 import { fileURLToPath } from 'url';
 import connectdb from '../config/mongodb.mjs';
 import File from '../models/file.mjs';
@@ -9,6 +10,11 @@ connectdb();
 
 const app = express();
 
+createUploadDirs(); // upload dir creation during server start
+
+app.use(express.json());
+app.use("/api", uploadRoutes);
+
 const port = 3000;
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,23 +22,15 @@ const __dirname = path.dirname(__filename);
 
 app.use(express.static(path.join(__dirname,'../public')));
 
-app.post('/uploads', upload.single('myFile'), async(req,res) => {
-    console.log('POST /uploads route hit');
-    if(!req.file) return res.status(400).send('No file uploaded');
-
+app.get('/files', async(req, res) => {
     try{
-        const savedFile = await File.create({
-            filename: req.file.filename,
-            size: req.file.size
-        });
-        console.log('Saved file to DB: ', savedFile);
-        res.send({message: "Upload Successful!", file: req.file.filename});
+        const files = await File.find().sort({uploadDate: -1});
+        res.json(files);
     }catch(err){
-        console.log('Error saving to DB: ', err);
-        res.status(500).send('Upload failed');
+        console.log('Error fetching files: ', err);
+        res.status(500).send('Server error');
     }
-    
-});
+})
 
 app.listen(port, ()=>{
     console.log(`Server running at http:localhost:${port}`);
