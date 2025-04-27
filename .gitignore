@@ -3,3 +3,8 @@ dist
 *.log
 .env 
 uploads/
+
+#ignore virusTotal related files and folders
+/utils/detectFileType.mjs
+/utils/getScanReportWithPolling.mjs
+/services/virus-scan.mjs
