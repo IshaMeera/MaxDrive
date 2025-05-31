@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 export async function createUploadDirs(){
     const uploadDir = path.join(__dirname, '../uploads');
 
-    const dirs = ['pdf','images','archives','documents','excel','videos','csv','others'];
+    const dirs = ['pdf','images','archives','documents','excel','videos','csv','zips','others'];
 
     for(const dir of dirs){
         const dirPath = path.join(uploadDir, dir);

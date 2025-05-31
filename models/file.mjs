@@ -14,6 +14,9 @@ const fileSchema = new mongoose.Schema({
     },
     originalName:{
         type: String
+    },
+    folder:{
+        type: String,
     }
 });
 

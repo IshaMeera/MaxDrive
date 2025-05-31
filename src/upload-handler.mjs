@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import {detectFileType, allowedMimeTypes} from "../utils/detectFileType.mjs"
 import fs from "fs/promises";
+import File from "../models/file.mjs";
 
 const router = express.Router();
 
@@ -81,11 +82,22 @@ router.post("/uploads", upload.single("myFile"), async (req, res) => {
         }
 
       const newPath = path.join(req.file.destination, targetFolder, req.file.filename);
+
+      await fs.mkdir(path.join(req.file.destination, targetFolder), {recursive: true});
       await fs.rename(uploadedFilePath, newPath);
+
+      const savedFile = new File({
+        filename: req.file.filename,
+        size: req.file.size,
+        uploadDate: new Date(),
+        folder: targetFolder,
+      });
+      await savedFile.save();
 
       res.status(200).json({
         message: "File uploaded successfully",
         filePath: newPath,
+        dbEntry: savedFile,
       });
 
     } catch (err) {
