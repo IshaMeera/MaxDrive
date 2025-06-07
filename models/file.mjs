@@ -17,7 +17,10 @@ const fileSchema = new mongoose.Schema({
     },
     folder:{
         type: String,
-    }
+    },
+    isTrashed: {type: Boolean, default: false},
+    isStarred: {type: Boolean, default: false}
+
 });
 
 const File = mongoose.model("File", fileSchema);

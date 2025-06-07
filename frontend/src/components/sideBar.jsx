@@ -1,34 +1,36 @@
-import React from 'react';
+import React from 'react'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Plus, Star, Trash2, Clock, FolderSearch } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Card } from '@/components/ui/card'
 
-const SideBar = ({onSelectFolder, selected}) => {
-    const folders = [
-        "csv",
-        "documents",
-        "excel",      
-        "images",
-        "pdf",
-        "videos",
-        "zips",
-        "others",
-        "archives"
-    ];
+const SideBar = ({onCreateFolder, onFilterChange})=>{
+  const navigate = useNavigate();
 
-    return(
-        <div className='w-64 bg-gray-100 h-screen p-4 border-r'>
-            <h2 className='text-xl font-bold mb-4'>Max Drive</h2>
-            <ul>
-                {folders.map((folder)=>(
-                    <li
-                      key={folder}
-                      onClick={()=> onSelectFolder(folder)}
-                      className={`p-2 cursor-pointer rounded hover:bg-gray-300 ${
-                        selected === folder ? 'bg-gray-300 font-semibold' :""}`}>
-                        {folder.charAt(0).toUpperCase() + folder.slice(1)}
-                        </li>
-                ))}
-            </ul>
-        </div>
-    )
+  const actions = [
+    {label: "New Folder", icon: <Plus />, onClick: onCreateFolder },
+    {label: "Starred", icon: <Star />, onClick: () =>  onFilterChange("Starred") },
+    {label: "Trash", icon: <Trash2 />, onClick: () => onFilterChange("Trashed") },
+    {label: "Recent", icon: <Clock />, onClick: () => onFilterChange('Recent Files')},
+    {label: "All Files", icon: <FolderSearch />, onClick:() => onFilterChange('all')}
+];
+ return(
+   <div className="p-0.5 space-y-3">
+      <h2 className="text-base font-semibold text-white mb-3">Quick Actions</h2>
+      <div className="flex flex-col gap-3">
+        {actions.map((action) => (
+          <Card
+            key={action.label}
+            onClick={action.onClick}
+            className="flex items-center gap-2 p-2 cursor-pointer bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-all duration-200 rounded"
+          >
+            {action.icon}
+            <span className="font-medium">{action.label}</span>
+          </Card>
+        ))}
+      </div>
+    </div>
+ )
 }
 
 export default SideBar;
