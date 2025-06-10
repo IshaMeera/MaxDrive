@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from 'react-router-dom';
 import uploadIcon from '../assets/upload.png';
 import Topbar from '@/components/Topbar';
+import { BASE_URL } from '@/lib/config';
 
 const FileUpload = () => {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ const FileUpload = () => {
 
 
           <form
-            action="http://localhost:3000/api/uploads"
+            action={`${BASE_URL}/api/uploads`}
             method="post"
             encType="multipart/form-data"
             className="flex flex-col items-center space-y-4"

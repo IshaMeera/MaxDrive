@@ -8,3 +8,7 @@ uploads/
 /utils/getScanReportWithPolling.mjs
 /services/virus-scan.mjs
 /utils/uploadToVirusTotal.mjs
+
+#testfiles
+frontend/src/components/TestComponent.jsx
+src/test-run-db.mjs
