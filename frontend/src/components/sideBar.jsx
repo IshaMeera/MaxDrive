@@ -15,7 +15,7 @@ const SideBar = ({onCreateFolder, onFilterChange})=>{
     {label: "All Files", icon: <FolderSearch />, onClick:() => onFilterChange('all')}
 ];
  return(
-   <div className="p-0.5 space-y-3">
+   <div className="p-1 space-y-3">
       <h2 className="text-base font-semibold text-white mb-3">Quick Actions</h2>
       <div className="flex flex-col gap-3">
         {actions.map((action) => (

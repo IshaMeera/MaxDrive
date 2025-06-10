@@ -2,6 +2,7 @@ import React, {useRef} from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BASE_URL } from "@/lib/config";
+import  EmptyFolder from "@/assets/EmptyFolder.svg?react";
 
 const FileGrid = ({files = [], filter = "", onFileClick})=>{
   const clickTimeout = useRef(null);
@@ -38,7 +39,11 @@ return {
         </h1>
 
         {files.length === 0 ? (
-          <p className="text-muted-foreground"> No files found in this folder. </p>
+          <div className="flex flex-col items-center justify-center h-[60vh] text-center text-muted-foreground">
+            <EmptyFolder className="w-40 h-40 mb-4 opacity-70"/>
+            <p className="text-lg font-medium">No files here yet</p>
+            <p className="text-sm text-muted-foreground">Upload your first file to get started.</p>
+          </div>
            ) : (
           <ScrollArea className="h-[80vh] pr-2">
             <div className="flex flex-col gap-1">
