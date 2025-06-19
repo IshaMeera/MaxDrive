@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import uploadIcon from '../assets/upload.png';
 import Topbar from '@/components/Topbar';
 import { BASE_URL } from '@/lib/config';
+import { toast } from 'react-toastify';
 
 const FileUpload = () => {
   const navigate = useNavigate();
@@ -40,17 +41,40 @@ const FileUpload = () => {
               Browse
             </Button>
           </div>
-          
-
-
+        
           <form
-            action={`${BASE_URL}/api/uploads`}
-            method="post"
-            encType="multipart/form-data"
-            className="flex flex-col items-center space-y-4"
-          >
-           {/* <div className="text-center text-white border border-blue-500 rounded-lg p-0"> */}
-            
+            onSubmit={async (e) =>{
+              e.preventDefault();
+              const file = fileInputRef.current.files[0];
+              if(!file) {
+                toast.error("Please select a file to upload.")
+                return;
+              }
+
+              const formData = new FormData();
+              formData.append('myFile', file);
+
+              try{
+                const response = await fetch(`${BASE_URL}/api/uploads`, {
+                  method: 'POST',
+                  body: formData,
+                });
+        
+                const result = await response.json();
+                if(response.ok){
+                toast.success('File uploaded successfully!');
+                navigate('/dashboard');
+                }else{
+                  toast.error("An error occurred during upload.");
+                  console.error('Upload error:', result.message);
+                }
+              }catch(err){
+                console.error('Upload error:', err);
+                alert('Upload failed. Please try again.');
+              }
+            }}
+            className='flex flex-col items-center space-y-4'
+            >
             <input
               ref={fileInputRef}
               id="fileInput"

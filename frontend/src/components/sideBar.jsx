@@ -1,16 +1,15 @@
 import React from 'react'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Plus, Star, Trash2, Clock, FolderSearch } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 
-const SideBar = ({onCreateFolder, onFilterChange})=>{
+const SideBar = ({onCreateFolder, onFilterChange, setShowFolderDialog})=>{
   const navigate = useNavigate();
 
   const actions = [
-    {label: "New Folder", icon: <Plus />, onClick: onCreateFolder },
-    {label: "Starred", icon: <Star />, onClick: () =>  onFilterChange("Starred") },
-    {label: "Trash", icon: <Trash2 />, onClick: () => onFilterChange("Trashed") },
+    {label: "New Folder", icon: <Plus />, onClick: () => setShowFolderDialog(true)},
+    {label: "Starred", icon: <Star />, onClick: () =>  onFilterChange("Starred")},
+    {label: "Trash", icon: <Trash2 />, onClick: () => onFilterChange("Trashed")},
     {label: "Recent", icon: <Clock />, onClick: () => onFilterChange('Recent Files')},
     {label: "All Files", icon: <FolderSearch />, onClick:() => onFilterChange('all')}
 ];

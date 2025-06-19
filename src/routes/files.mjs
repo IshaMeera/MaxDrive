@@ -34,7 +34,7 @@ router.get('/', async (req,res)=>{
 });
 
 //GET files with optional filters
-router.get("/", async(requestAnimationFrame, res)=>{
+router.get("/", async(req, res)=>{
     const {starred, trashed} = req.query;
 
     let filter = {};
