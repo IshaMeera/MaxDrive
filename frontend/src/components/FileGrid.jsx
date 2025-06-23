@@ -5,12 +5,16 @@ import { BASE_URL } from "@/lib/config";
 import  EmptyFolder from "@/assets/EmptyFolder.svg?react";
 import { Image, Video, FileText, FileArchive, File, FileSpreadsheet } from "lucide-react";
 import useFileManager from "@/hooks/useFileManager";
+import {Star, StarOff} from 'lucide-react';
+import {FaStar, FaRegStar} from 'react-icons/fa';
 
 const FileGrid = ({filter = "", searchTerm = "", onFileClick })=>{
   const clickTimeout = useRef(null);
   const linkRefs = useRef({});
 
-  const{files, handleStar, handleTrash, loading, error} = useFileManager(filter);
+  const{files, handleStar, handleTrash, handleRestore, handleDeletePremanet, setRawFiles, setAllFiles, setFilteredFiles, loading, error} = useFileManager(filter);
+  const [renamingFileId, setRenamingFileId] = useState(null);
+  const [newFileName, setNewFileName] = useState('');
 
   const [contextMenu, setContextMenu] = useState({visible: false, x:0, y:0, file: null,});
   useEffect(() => {
@@ -23,6 +27,9 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick })=>{
     window.addEventListener("click", handleClickOutside);
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
+  const isTrashView = filter === 'trash' || filter === 'trashed' ||
+                      (typeof filter === 'string' && (filter.name === 'trash' || filter.name === 'trashed')) ||
+                      (typeof filter === 'object' && (filter.name === 'trash' || filter.name === 'trashed'));
 
   const adjustedX = Math.min(contextMenu.x, window.innerWidth - 300);
   const adjustedY = Math.min(contextMenu.y, window.innerHeight - 200);
@@ -39,19 +46,31 @@ const mimeTypes = {
       csv: 'text/csv',
       mp4: 'video/mp4'
     }
+const extDisplayMap = {
+      jpg: "JPG File",
+      jpeg: "JPEG File",
+      png: "PNG File",
+      mp4: "MP4 Video",
+      txt: "Text File",
+      csv: "CSV File",
+      pdf: "PDF File",
+      docx: "Word Document",
+      xlsx: "Excel File",
+      zip: "ZIP Archive",
+}
   const searchedFiles = files.filter(file =>
     file.filename.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const filesWithPreview = searchedFiles.map((file) =>{
   const extenstion = file.filename.split('.').pop().toLowerCase();
-//   console.log("🧪 Building preview for:", {
-//   filename: file.filename,
-//   folder: file.folder,
-//   url: `${BASE_URL}/uploads/${file.folder}/${file.filename}`
-// });
+  const extLabel = extDisplayMap[extenstion] || `${extenstion.toUpperCase()} File`;
+  const nameWithoutExt = file.filename.replace(`.${extenstion}`, '')
 
 return {
     ...file,
+    extenstion,
+    extLabel,
+    nameWithoutExt,
     mimetype: mimeTypes[extenstion] || 'application/octet-stream',
     url: `${BASE_URL}/uploads/${file.folder}/${file.filename}`
    }  
@@ -96,9 +115,11 @@ const getFileIcon = (filename) => {
            ) : (
           <div className="relative">
           <ScrollArea className="h-[80vh] pr-2">
-            <div className="flex items-center justify-between px-10 py-1 text-sm text-muted-foreground font-zinc-400">
-            <div className="truncate max-w-[70%]">Name</div>
-            <div className="pl-4">Size</div>
+            <div className="grid grid-cols-4 gap-4 px-6 py-2 text-sm font-zinc-400 text-muted-foreground border-b text-left">
+            <div className="text-right pr-50">Name</div>
+            <div>Type</div>
+            <div>Date Modified</div>
+            <div className="pl-4 text-right">Size</div>
             </div>
             
             <div className="flex flex-col gap-1">
@@ -109,7 +130,6 @@ const getFileIcon = (filename) => {
                 if (!linkRefs.current[file._id]) {
                 linkRefs.current[file._id] = React.createRef();
                 console.log("Current filter in FileGrid:", filter);
-console.log("Renderin files:", file.filename);
               }
               const handleClick = () => {
                 clearTimeout(clickTimeout.current);
@@ -134,7 +154,7 @@ console.log("Renderin files:", file.filename);
                   onDoubleClick={()=> linkRefs.current[file._id]?.current?.click()}
                   onContextMenu={(e) =>{
                     e.preventDefault();
-                    console.log('Right click detected', file);
+                    // console.log('Right click detected', file);
                     setContextMenu({
                       visible: true,
                       x: e.pageX,
@@ -145,11 +165,86 @@ console.log("Renderin files:", file.filename);
                   className="px-1 py-1 bg-card text-card-foreground 
                   shadow-sm hover:bg-muted transition-colors duration-150 hover:bg-blue-200 cursor-pointer"
                 >
-                    <div className='flex items-center justify-between px-4 py-1'>
-                    <div className="truncate text-sm text-black font-medium max-w-[70%]">
-                        <div className="flex items-center space-x-2 text-sm text-black font-medium">
-                          {getFileIcon(file.filename)}
-                          <span>{file.filename}</span>
+            <div className='flex items-center justify-between px-4 py-1'>
+            <div className="truncate text-sm text-black font-medium max-w-[70%]">
+             <div className="flex items-center space-x-2 text-sm text-black font-medium">
+             {file.isStarred ? (
+                 <FaStar
+                  size={18}
+                  className="text-yellow-400 cursor-pointer hover:text-yellow-300 transition-colors duration-200 ease-in-out" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStar(file._id);
+                  }}
+                  />
+             ) : (
+                  <FaRegStar
+                  size={18}
+                  className="text-zinc-400 cursor-pointer hover:text-yellow-300 transition-colors duration-200 ease-in-out"
+                  onClick={(e) => {
+                    e.stopPropagation();  
+                    handleStar(file._id);
+                  }}
+                  />
+              )}
+              {getFileIcon(file.filename)}  
+             <div className="grid grid-cols-4 gap-4 items-center w-full">
+                    <div>
+                      {renamingFileId === file._id ? (
+                        <input
+                          type="text"
+                          value={newFileName}
+                          onChange={(e) => setNewFileName(e.target.value)}
+                          onKeyDown={async (e) => {
+                            if (e.key === 'Enter') {
+                              const finalName = `${newFileName.trim()}.${file.extenstion}`;
+
+                              try {
+                                const response = await fetch(`${BASE_URL}/api/files/${file._id}/rename`, {
+                                  method: 'PATCH',
+                                  headers: {'Content-Type': 'application/json'},
+                                  body: JSON.stringify({ newName: finalName }),
+                                });
+
+                                const result = await response.json();
+                                
+                                const updateItemById = (list, id, updates) =>
+                                list.map((item) =>
+                                  item._id === id ? { ...item, ...updates } : item
+                                );
+                                if (response.ok) {
+                                  const updatedFields = {
+                                  filename: finalName,
+                                  nameWithoutExt: newFileName.trim(),
+                                };
+                                  setAllFiles((prev) => updateItemById(prev, file._id, { filename: finalName }));
+                                  setRawFiles((prev) => updateItemById(prev, file._id, updatedFields));
+                                  setFilteredFiles((prev) => updateItemById(prev, file._id, updatedFields));
+                                  console.log("🔁 Renamed file immediately:", updatedFields);
+                                }else{
+                                  console.error('Rename failed:', result)
+                                }
+                              } catch (error) {
+                                console.error('Rename error:', error);
+                              } finally {
+                                setRenamingFileId(null);
+                              }
+                            } 
+                            if (e.key === 'Escape') {
+                              setRenamingFileId(null);
+                            }
+                          }}
+                          className="text-sm bg-white text-black border border-gray-300 px-2 py-0.5 w-full"
+                          autoFocus
+                        />
+                      ) : (
+                        <span>{file.nameWithoutExt}</span>
+                      )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">{file.extLabel}</div>
+                    <div className="text-xs text-muted-foreground">{new Date(file.uploadDate).toLocaleString()}</div> 
+
+                        </div>
                         </div>
                       {/* Hidden anchor to trigger programmatically */}
                       <a 
@@ -163,7 +258,7 @@ console.log("Renderin files:", file.filename);
                         Hidden link
                       </a>
                     </div>
-                    <div className="text-sm text-muted-foreground flex-shrink-0 pl-4 bg-blue-100 text-blue-800 rounded-full px-2">
+                    <div className="text-xs text-muted-foreground ">
                         {(file.size / (1024 * 1024)).toFixed(2)} MB
                     </div>
                     </div>
@@ -177,21 +272,53 @@ console.log("Renderin files:", file.filename);
               className="absolute custom-context-menu bg-white z-50 p-2 rounded-xl border shadow-lg w-48 transition-all animate-fade-in"
               style={{ top: adjustedY, left: adjustedX }}
             >
+              {isTrashView ? (
+                <>
+                <p
+                  onClick={()=>{handleRestore(contextMenu.file._id);
+                  setContextMenu({...contextMenu, visible: false});
+                  }}
+                className="text-sm px-3 py-2 hover:bg-blue-100 rounded-sm cursor-pointer transition text-left">
+                  Restore
+                </p>
+                <p
+                  onClick={() => {handleDeletePremanet(contextMenu.file._id);
+                  setContextMenu({ ...contextMenu, visible: false });
+                  }}
+                  className="text-sm px-3 py-2 hover:bg-red-200 rounded-sm cursor-pointer transition text-left">
+                  Delete Permanently
+                </p>
+                </>
+              
+              ) : (
+                <>
+              {filter !== 'trashed' && (
               <p onClick={()=>{ handleStar(contextMenu.file._id);
-                console.log("Starred:", contextMenu.file.filename);
+                console.log(`${filter === 'starred' ? 'Unstarred' : 'Starred'}:`, contextMenu.file.filename);
                 setContextMenu({...contextMenu, visible: false});
               }}
-              className="text-sm px-3 py-2 hover:bg-blue-100 rounded-md cursor-pointer transition">
-                Star
+              className="text-sm px-3 py-2 hover:bg-blue-100 rounded-sm cursor-pointer transition text-left">
+                 <Star className="w-4 h-4 text-yellow-400" />
+                {filter === 'starred' ? 'Unstar' : 'Star'}
+              </p>
+              )}
+              <p onClick={()=>{
+                setRenamingFileId(contextMenu.file._id);
+                setNewFileName(contextMenu.file.nameWithoutExt);
+                setContextMenu({...contextMenu, visible:false});
+              }}
+              className="text-sm px-3 py-2 hover:bg-blue-100 rounded-sm cursor-pointer transition text-left">
+                Rename
               </p>
               <p onClick={() => { handleTrash(contextMenu.file._id);  
                   console.log("Trashed:", contextMenu.file.filename);
                   setContextMenu({ ...contextMenu, visible: false });
                 }}
-                className="text-sm px-3 py-2 hover:bg-red-100 rounded-md cursor-pointer transition"
-              >
+                className="text-sm px-3 py-2 hover:bg-red-100 rounded-sm cursor-pointer transition text-left">
                  Trash
               </p>
+              </>
+              )}
             </div>
           )}
 

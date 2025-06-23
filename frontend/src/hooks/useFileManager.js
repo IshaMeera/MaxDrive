@@ -8,6 +8,9 @@ const useFileManager = (filter = all) => {
     const [categoriesWithFiles, setCategoriesWithFiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [rawFiles, setRawFiles] = useState([]);
+
+    const autoFolders = ["images", "pdf", "videos", "documents", "excel", "zips", "archives", "csv", "others"];
 
     const refetchFiles = async(controller = new AbortController()) => {
 
@@ -43,18 +46,6 @@ const useFileManager = (filter = all) => {
         setAllFiles(allData);  
         console.log("Refetched all files:", allData.length);
 
-        const allNonTrashed = allData.filter(file => !file.isTrashed);
-
-        const catWithFiles = new Set();
-        allNonTrashed.forEach((file) => {
-          const type = file.folder || file.type;
-          if (type && typeof type === 'string') {
-            catWithFiles.add(type.toLowerCase());
-          }
-        });
-        console.log('cats with files:',catWithFiles)   
-        setCategoriesWithFiles(Array.from(catWithFiles));
-
         const filterValue = filter?.name || filter; 
         const filtered = allData.filter((file)=>{
         if (filterValue === 'all') return !file.isTrashed;
@@ -77,18 +68,35 @@ const useFileManager = (filter = all) => {
 
 const handleStar = async(fileId) =>{
     try{
-        const res = await fetch(`${BASE_URL}/api/files/${fileId}/star`, {
-            method: "PATCH",
-            headers:{
-                "Content-Type": "application/json",
-            },
-        });
-        if(!res.ok) throw new Error('Failed to star file');
-        await refetchFiles(); //refetch updated file list 
-    }catch(err){
-        console.error('"Failed to star file:', err);
-    }
-}
+        const updatedRawFile = rawFiles.map(file =>
+          file._id === fileId ? {...file, isStarred: !file.isStarred} : file
+        );
+        setRawFiles(updatedRawFile);
+
+        const currentFilter = filter?.name || filter;
+
+        if(currentFilter === 'starred'){
+          setFilteredFiles(prev => prev.filter(file=> file._id !== fileId));
+        }else{
+          const updatedFilter = filteredFiles.map(file =>
+            file._id === fileId ? {...file, isStarred: !file.isStarred} : file
+          );
+          setFilteredFiles(updatedFilter);
+        }
+
+        const res = await fetch(`${BASE_URL}/api/files/${fileId}/star`,{
+          method: "PATCH",
+          headers: {"Content-Type":"application/json"},
+        })
+        if(!res.ok){
+          targetFile.isStarred = !targetFile.isStarred;
+          setRawFiles([...updatedRawFile]);
+          throw new Error('Failed to update star');
+        }
+      }catch(err){
+        console.error('Failed to star file', err);
+      }
+      };
 
 const handleTrash = async(fileId) =>{
     try{
@@ -104,13 +112,59 @@ const handleTrash = async(fileId) =>{
         console.error('Failed to trash file:', err);
     }  
 }
+
+const handleRestore = async(fileId) =>{
+ try {
+    const res = await fetch(`${BASE_URL}/api/files/${fileId}/restore`, {
+      method: "PATCH",
+    });
+    const result = await res.json();
+
+    if (res.ok) {
+      await refetchFiles();
+      // // Update UI
+      // setAllFiles((prev) => prev.filter(f => f._id !== fileId)); // remove from trash UI
+    } else {
+      console.error("Restore failed", result);
+    }
+  } catch (err) {
+    console.error("Restore error", err);
+  }
+};
+
+const handleDeletePremanet = async(fileId) =>{
+  try{
+    const res = await fetch(`${BASE_URL}/api/files/${fileId}`, {
+      method: "DELETE",
+  });
+  if(!res.ok) throw new Error('Permanent delete failed');
+  await refetchFiles(); //refetch updated file list
+  // setAllFiles((prev) => prev.filter(file => file._id !== fileId));
+}catch(err){
+  console.error('Permanent delete error:', err);
+}
+}
 useEffect(()=>{
       const controller = new AbortController();
       refetchFiles(controller);
       return () => controller.abort();
     }, [filter]);
 
- return{files: filteredFiles, allFiles, loading, error, handleStar, handleTrash, refetchFiles, categoriesWithFiles, filteredFiles};
-}
+useEffect(() =>{
+  const fetchFiles = async() =>{
+    try{
+      const res = await fetch(`${BASE_URL}/api/files`);
+      const data = await res.json();
+      setRawFiles(data);
+    }catch(err){
+      console.error('Failed to fetch files:', err);
+    }
+  }
+  fetchFiles();
+},[]);
+
+ return{files: filteredFiles, setAllFiles, loading, error, autoFolders, rawFiles, setRawFiles, setFilteredFiles,
+  handleStar, handleTrash, refetchFiles, filteredFiles, handleRestore, handleDeletePremanet};
+ }
 
 export default useFileManager; 

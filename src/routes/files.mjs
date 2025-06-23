@@ -1,11 +1,12 @@
 import express from "express";
 import File from "../../models/file.mjs"; 
 import path from 'path';
+import fs from 'fs/promises';
 
 const router = express.Router();
+const uploadDir = path.resolve('../uploads');
 
 //Get all files
-
 router.get('/', async (req,res)=>{
     try {
     const { type, starred, trash } = req.query;
@@ -46,7 +47,6 @@ router.get("/", async(req, res)=>{
 });
 
 // PATCH to toggle star
-
 router.patch("/:id/star", async(req, res)=>{
     const file = await File.findById(req.params.id);
     if(!file) return res.status(404).json({error: "Not found"});
@@ -57,27 +57,86 @@ router.patch("/:id/star", async(req, res)=>{
 });
 
 //PATCH to move to trash 
-
 router.patch('/:id/trash', async(req, res)=>{
-    const file = await File.findById(req.params.id);
-    if(!file) return res.status(404).json({error: 'Not found'});
+    try{
+      const {id} = req.params;
+      const file = await File.  findById(id);;
+      if(!file) return res.status(404).json({error: 'File not found'});
 
-    file.isTrashed = true;
-    await file.save();
-    res.json({message: 'Moved to trash', file});
+      file.previousFolder = file.folder;
+      file.isTrashed = true;
+      file.folder = 'trash';
+
+      await file.save();
+      res.json({message: 'File trashed successfully', file});
+    }catch(err){
+      console.error('Error trashing file:', err);
+      res.status(500).json({error: 'Failed to trash file'});
+    }
 
 });
 
-//DETELE the file permanatly
+//PATCH to rename a file
+router.patch('/:id/rename', async(req, res)=>{
+  try{
+    const {newName} = req.body;
+    const fileId = req.params.id;
+
+    const file = await File.findById(fileId);
+    if (!file) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
+    const oldPath = path.join(uploadDir, file.folder, file.filename);
+    const newPath = path.join(uploadDir, file.folder, newName);
+
+    await fs.rename(oldPath, newPath);
+
+    file.filename = newName;
+    await file.save();
+
+    res.status(200).json({ message: 'File renamed successfully', updatedFile: file });
+  } catch (err) {
+    console.error('Error renaming file:', err);
+    res.status(500).json({ message: 'sadly failed to rename file' });
+  }
+});
+
+//PATCH to restore a trashed file
+  router.patch('/:id/restore', async(req, res)=>{
+    try{
+      const {id} = req.params;
+      const file = await File.findById(id);
+      if(!file) return res.status(404).json({error: 'File not found'});
+
+      file.isTrashed = false;
+      //restore to previous folder if available
+      file.folder = file.previousFolder || 'all'; // Default to 'all' if no previous folder
+      file.previousFolder = undefined;
+      await file.save();
+
+      res.json({message: 'File restored successfully', file});
+  }catch (err){
+    console.error('Error restoring file:', err);
+    res.status(500).json({error: 'Failed to restore file'});
+  }
+});
 
 router.delete('/:id', async(req, res)=>{
-    const file = await File.findByIdAndDelete(req.params.id);
-    if(!file) return res.status(404).json({error: 'Not found'});
+    try{
+      const {id} = req.params;
+      const file = await File.findByIdAndDelete(id);
 
-    const filePath = path.join("uploads", file.folder, file.filename);
-    await fs.unlink(filePath).catch(()=>{});    //ignore the error if already missingg
-
-    res.join({message: "File permanaetly deleted"});
+      if(!file) return res.status(404).json({error: 'File not found'});
+      const filePath = `${uploadDir}/${file.folder}/${file.filename}`;
+      await fs.unlink(filePath).catch(()=>{
+        console.warn('File not found on disk: ${filePath}')
+      });
+      res.json({message: 'File deleted permanently', file});
+    }catch(err){
+      console.error('Error deleting file:', err);
+      res.status(500).json({error: 'Failed to dlt file permanently'});
+    }
 })
 
 export default router;

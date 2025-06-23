@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, use, useMemo } from 'react';
 import SideBar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 import FolderGrid from '@/components/FolderGrid';
@@ -18,7 +18,8 @@ const Dashboard = () => {
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [folderName, setFolderName] = useState("");
   const [filter, setFilter] = useState('all');
-  const {files, categoriesWithFiles, filteredFiles} = useFileManager(filter);
+  const [stableFolders, setStableFolders] = useState([]);
+  const {filteredFiles, autoFolders, rawFiles} = useFileManager(filter);
   //   ()=>{
   //   try{
   //   const saved = localStorage.getItem('filter');
@@ -95,6 +96,29 @@ const Dashboard = () => {
       console.error('Failed to create folder', err);
     }
   }
+  console.log("Auto folders in Dashboard:", autoFolders);
+
+  useEffect(() => {
+    const folderSet = new Set();
+    rawFiles
+        .filter(file => !file.isTrashed)
+        .forEach(file => {
+          const folder = file.folder?.toLowerCase();
+          if(folder && autoFolders.includes(folder)){
+            folderSet.add(folder);
+          }
+        });
+        const newFolders = Array.from(folderSet);
+         console.log("⏳ Recalculating folders from raw files:", newFolders);
+
+      // Prevent infinite loop by updating state only if it's actually different 
+      const areEqual = stableFolders.length === newFolders.length &&
+        stableFolders.every((f, i) => f === newFolders[i]);
+
+      if (!areEqual) {
+        setStableFolders(newFolders);
+      }
+  }, [rawFiles, autoFolders]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -119,7 +143,7 @@ const Dashboard = () => {
         )
         }
             <FolderGrid 
-              folders={categoriesWithFiles.map(type => ({name: type}))}
+              folders={stableFolders}
               selected={filter?.name || filter}
               onSelect={(type) => setFilter(type)}
             />
