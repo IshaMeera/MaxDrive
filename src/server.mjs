@@ -6,8 +6,9 @@ import { fileURLToPath } from 'url';
 import connectdb from '../config/mongodb.mjs';
 import File from '../models/file.mjs';
 import cors from 'cors';
-import filesRoutes from './routes/files.mjs';
 import dotenv from 'dotenv';
+import filesRoutes from './routes/files.mjs';
+import folderRoutes from './routes/folders.mjs';
 
 dotenv.config();
 connectdb();
@@ -30,7 +31,8 @@ createUploadDirs(); // upload dir creation during server start
 
 app.use(express.json());
 app.use("/api", uploadRoutes);
-app.use('/api/files', filesRoutes)
+app.use('/api/files', filesRoutes);
+app.use('/api/folders', folderRoutes);
 
 app.use(express.static(path.join(__dirname,'../public')));  
 

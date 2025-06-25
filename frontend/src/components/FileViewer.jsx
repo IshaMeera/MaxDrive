@@ -1,13 +1,26 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Button} from "@/components/ui/button";
 
 const FileViewer = ({ file, onClose }) => {
+    // const [content, setContent] = useState("");
     if(!file) return null;
 
-    const {filename, url, mimetype} = file;
+    const {filename, url, mimetype} = file; 
 
-    console.log('Fileviewer received:', file); 
+    // console.log('Fileviewer received:', file); 
+
+//     useEffect(()=>{
+//         if (mimetype === "text/plain" || mimetype === "text/csv") {
+//     fetch(file.url)
+//       .then(res => {
+//         if (!res.ok) throw new Error("Failed to load content.");
+//         return res.text();
+//       })
+//       .then(setContent)
+//       .catch(() => setContent("⚠️ Failed to load content."));
+//   }
+// }, [file]);
 
     const renderContent = () =>{
         if(!file || !file.mimetype || !file.url){
@@ -21,11 +34,16 @@ const FileViewer = ({ file, onClose }) => {
             return <img src={file.url} alt={file.filename} className="max-h-[70vh] mx-auto rounded shadow"/>
         }
         if (mimetype === "application/pdf") {
-      return <iframe src={file.url} className="w-full h-[70vh]" />;
+             return <iframe src={file.url} className="w-full h-[70vh]" />;
         }
 
-         if (mimetype === "text/plain" || mimetype === "text/csv") {
-      return <iframe src={file.url} title={filename} className="w-full h-[70vh]" />;
+        if (mimetype === "text/plain" || mimetype === "text/csv") {
+            return <iframe src={file.url} title={filename} className="w-full h-[70vh]" />;
+        // return (
+        //     <div className="bg-zinc-900 text-white p-4 rounded shadow max-h-[70vh] overflow-auto">
+        //     <pre className="whitespace-pre-wrap">{content}</pre>
+        //     </div>
+        // );
         }
 
         if (mimetype === "video/mp4") {

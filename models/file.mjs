@@ -19,7 +19,11 @@ const fileSchema = new mongoose.Schema({
         type: String,
     },
     isTrashed: {type: Boolean, default: false},
-    isStarred: {type: Boolean, default: false}
+    isStarred: {type: Boolean, default: false},
+    
+    previousFolder:{
+        type: String,
+    }
 
 });
 
