@@ -3,8 +3,11 @@ import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogCl
 import {Input} from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-const FolderDialog = ({ folderName, setFolderName, onCreate, open, setOpen }) =>{
+const FolderDialog = ({ folderName, setFolderName, onCreate, open, setOpen,
+                        showDuplicateDialog, setShowDuplicateDialog
+ }) =>{
     return(
+        <>
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className='sm:max-w-md'>
              <DialogHeader>
@@ -31,6 +34,23 @@ const FolderDialog = ({ folderName, setFolderName, onCreate, open, setOpen }) =>
         </DialogFooter>
         </DialogContent>
         </Dialog>
+              
+        <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Folder already exists</DialogTitle>
+                </DialogHeader>
+              <p className='text-sm text-muted-foreground'>
+                A folder with this name already exists. Please try a different name.
+              </p>
+              <DialogFooter className='mt-4'>
+                <Button onClick={()=> setShowDuplicateDialog(false)} className='w-full'>
+                    OK
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        </>     
     )
 }
 export default FolderDialog;

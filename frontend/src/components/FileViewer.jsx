@@ -8,7 +8,7 @@ const FileViewer = ({ file, onClose }) => {
 
     const {filename, url, mimetype} = file; 
 
-    console.log('Fileviewer received:', file); 
+    // console.log('Fileviewer received:', file); 
 
 //     useEffect(()=>{
 //         if (mimetype === "text/plain" || mimetype === "text/csv") {

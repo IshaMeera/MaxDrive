@@ -19,6 +19,9 @@ const Dashboard = () => {
   const [folderName, setFolderName] = useState("");
   const [filter, setFilter] = useState('all');
   const [stableFolders, setStableFolders] = useState([]);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [renamingFolderId, setRenamingFolderId] = useState(null);
+  const [newFolderName, setNewFolderName] = useState('');
   const {filteredFiles, autoFolders, rawFiles} = useFileManager(filter);
   //   ()=>{
   //   try{
@@ -50,10 +53,6 @@ const Dashboard = () => {
     
     const data = await res.json();
     setFolders(data);
-
-    // if(data.length > 0){
-    //   setFilter(data[0]);
-    // }
     }catch(err){
       console.error('Error fetching folders:', err);
       }
@@ -85,8 +84,13 @@ const Dashboard = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({name: folderName}),
+        body: JSON.stringify({name: folderName.trim()}),
       })
+      if(res.status === 409){
+        setShowDuplicateDialog(true);
+        return;
+      }
+      if(!res.ok) throw new Error('Failed to create folder');
 
       const newFolder = await res.json();
       setCustomFolders((prev) => [...prev, newFolder]);
@@ -96,7 +100,46 @@ const Dashboard = () => {
       console.error('Failed to create folder', err);
     }
   }
-  console.log("Auto folders in Dashboard:", autoFolders);
+  // console.log("Auto folders in Dashboard:", autoFolders);
+  useEffect(()=>{
+    if(!showFolderDialog){
+      setFolderName('');
+    }
+  },[showFolderDialog]);
+
+  const handleRename = async (folderId) => {
+    const trimmedName = newFolderName.trim();
+    if(!trimmedName) return;
+
+    try{
+      const res = await fetch(`${BASE_URL}/api/folders/${folderId}`,{
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: trimmedName}),
+      });
+      if(res.status === 409){
+        setShowDuplicateDialog(true);
+      }
+      if(!res.ok) throw new Error('Rename failed');
+
+      const updated = await res.json();
+      setCustomFolders((prev)=>
+          prev.map((folder)=>
+            folder._id === folderId ? {...folder, name:updated.name}:folder
+    ))
+    setRenamingFolderId(null);
+    setNewFolderName('');
+    }catch(err){
+      console.error('Failed to rename folder:', err);
+    }
+  }
+  
+  useEffect(()=>{
+    if(!showDuplicateDialog){
+      setNewFolderName('');
+      setRenamingFolderId(null);
+    }
+  },[showDuplicateDialog]);
 
   useEffect(() => {
     const folderSet = new Set();
@@ -109,7 +152,7 @@ const Dashboard = () => {
           }
         });
         const newFolders = Array.from(folderSet);
-         console.log("⏳ Recalculating folders from raw files:", newFolders);
+        //  console.log("⏳ Recalculating folders from raw files:", newFolders);
 
       // Prevent infinite loop by updating state only if it's actually different 
       const areEqual = stableFolders.length === newFolders.length &&
@@ -138,6 +181,11 @@ const Dashboard = () => {
             folders={customFolders}
             selected={filter}
             onSelect={setFilter}
+            renamingFolderId={renamingFolderId}
+            setRenamingFolderId={setRenamingFolderId}
+            newFolderName={newFolderName}
+            setNewFolderName={setNewFolderName}
+            handleRename={handleRename}
             />
           </>
         )
@@ -162,6 +210,8 @@ const Dashboard = () => {
       onCreate={handleCreateFolder}
       open={showFolderDialog}
       setOpen={setShowFolderDialog}
+      showDuplicateDialog={showDuplicateDialog}
+      setShowDuplicateDialog={setShowDuplicateDialog}
       />  
       </main>
     </div>

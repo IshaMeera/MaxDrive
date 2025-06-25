@@ -5,8 +5,8 @@ import { BASE_URL } from "@/lib/config";
 import  EmptyFolder from "@/assets/EmptyFolder.svg?react";
 import { Image, Video, FileText, FileArchive, File, FileSpreadsheet } from "lucide-react";
 import useFileManager from "@/hooks/useFileManager";
-import {Star, StarOff} from 'lucide-react';
 import {FaStar, FaRegStar} from 'react-icons/fa';
+import ContextMenu from "./ContextMenu";
 
 const FileGrid = ({filter = "", searchTerm = "", onFileClick })=>{
   const clickTimeout = useRef(null);
@@ -30,9 +30,6 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick })=>{
   const isTrashView = filter === 'trash' || filter === 'trashed' ||
                       (typeof filter === 'string' && (filter.name === 'trash' || filter.name === 'trashed')) ||
                       (typeof filter === 'object' && (filter.name === 'trash' || filter.name === 'trashed'));
-
-  const adjustedX = Math.min(contextMenu.x, window.innerWidth - 300);
-  const adjustedY = Math.min(contextMenu.y, window.innerHeight - 200);
 
 const mimeTypes = {
       jpg: 'image/jpeg',
@@ -154,7 +151,8 @@ const getFileIcon = (filename) => {
                   onDoubleClick={()=> linkRefs.current[file._id]?.current?.click()}
                   onContextMenu={(e) =>{
                     e.preventDefault();
-                    // console.log('Right click detected', file);
+                    console.log('Right click detected:', e.pageX, e.pageY);
+                    //console.log('Right click detected:', file);
                     setContextMenu({
                       visible: true,
                       x: e.pageX,
@@ -267,7 +265,24 @@ const getFileIcon = (filename) => {
             })}
             </div>
           </ScrollArea>
-           {contextMenu.visible && contextMenu.file && (
+          <ContextMenu 
+              file={contextMenu.file}
+              x={contextMenu.x}
+              y={contextMenu.y}
+              visible={contextMenu.visible}
+              onClose={() => setContextMenu({...contextMenu, visible: false})}
+              inTrashView={filter === 'trashed'}
+              filter={filter}
+              handleStar={handleStar}
+              handleTrash={handleTrash}
+              handleRestore={handleRestore}
+              handleDeletePremanet={handleDeletePremanet}
+              onRename={(file)=>{
+                setRenamingFileId(file._id);
+                setNewFileName(file.nameWithoutExt);
+              }}
+          />
+           {/* {contextMenu.visible && contextMenu.file && (
             <div
               className="absolute custom-context-menu bg-white z-50 p-2 rounded-xl border shadow-lg w-48 transition-all animate-fade-in"
               style={{ top: adjustedY, left: adjustedX }}
@@ -320,7 +335,7 @@ const getFileIcon = (filename) => {
               </>
               )}
             </div>
-          )}
+          )} */}
 
           </div>
           )}
