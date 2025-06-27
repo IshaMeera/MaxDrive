@@ -21,7 +21,7 @@ const CustomFolderGrid = ({folders = [], selected, onSelect,
                      }`}
                      >
                     <div
-                     onClick={() => onSelect(folder.name.toLowerCase())}
+                     onClick={() => onSelect({name: folder.name.toLowerCase(), _id: folder._id, type: 'custom'})}
                      className="flex flex-col items-center"
                     >   
                     <FolderIcon className="w-12 h-12 text-yellow-400"/>
@@ -51,14 +51,11 @@ const CustomFolderGrid = ({folders = [], selected, onSelect,
                             <p className="text-sm mt-0 text-center text-black">{folder.name}</p>
                         )} 
               
-            </div>
+                    </div>
+                </div>
+                )})}
         </div>
-                    )
-                })}
-                </div>
-                </div>
-            
-    )
-}
+    </div>
+        )}
 
 export default CustomFolderGrid;

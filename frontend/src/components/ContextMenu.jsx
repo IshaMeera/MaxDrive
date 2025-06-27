@@ -112,7 +112,7 @@ const ContextMenu = ({file, x, y, visible, onClose, inTrashView, handleStar, han
               }}
               className="text-sm px-3 py-2 hover:bg-blue-100 rounded-sm cursor-pointer transition text-left"
             >
-              {filter === 'starred' ? 'Unstar' : 'Star'}
+              {file.isStarred ? 'Unstar' : 'Star'}
             </p>
           )}
           <p

@@ -87,8 +87,35 @@ router.patch('/:id/rename', async(req, res)=>{
       return res.status(404).json({ message: 'File not found' });
     }
 
+    let folderName = file.folder;
+
+    if (!folderName) {
+      const ext = path.extname(file.filename).toLowerCase();
+      if (['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext)) {
+        folderName = 'images';
+      } else if (['.pdf'].includes(ext)) {
+        folderName = 'pdf';
+      } else if (['.csv'].includes(ext)) {
+        folderName = 'csv';
+      } else if (['.xlsx', '.xls'].includes(ext)) {
+        folderName = 'excel';
+      } else if (['.mp4', '.avi', '.mov'].includes(ext)) {
+        folderName = 'videos';
+      } else if (['.zip', '.rar'].includes(ext)) {
+        folderName = 'zips';
+      } else {
+        folderName = 'others';
+      }
+    }
+    console.log('file.folder', file.folder);
+    console.log('file.filename', file.filename);
+
+
     const oldPath = path.join(uploadDir, file.folder, file.filename);
     const newPath = path.join(uploadDir, file.folder, newName);
+    console.log('Old path:', oldPath);
+    console.log('New path:', newPath);
+    console.log('Final folder path:', folderName);
 
     await fs.rename(oldPath, newPath);
 

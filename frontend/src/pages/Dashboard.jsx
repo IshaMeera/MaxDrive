@@ -1,20 +1,25 @@
-import React, { useState, useEffect, use, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import SideBar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 import FolderGrid from '@/components/FolderGrid';
 import FileGrid from '@/components/FileGrid'; 
 import FileViewer from '@/components/FileViewer';
-import {BASE_URL} from '@/lib/config';
 import FolderDialog from '@/components/FolderDialog';
 import CustomFolderGrid from '@/components/CustomFolderGrid';
+import {BASE_URL} from '@/lib/config';
 import useFileManager from '@/hooks/useFileManager';
+import { useCustomFolders } from '@/context/CustomFolderContext';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
+
+  const navigate = useNavigate();
+
+  const {customFolders, setCustomFolders} = useCustomFolders();
   const [folders, setFolders] = useState([]);
   const [showCreateFolderModel, setShowCreateFolderModel] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFile, setSelectedFile] = useState(null); 
-  const [customFolders, setCustomFolders] = useState([]);
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [folderName, setFolderName] = useState("");
   const [filter, setFilter] = useState('all');
@@ -37,8 +42,8 @@ const Dashboard = () => {
   //     localStorage.setItem('selectedFilter', JSON.stringify(filter));
   //   }
   // }, [filter]);
-
-  const searchedFiles = filteredFiles.filter(file =>
+ 
+   const searchedFiles = filteredFiles.filter(file =>
     file.filename.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
@@ -180,12 +185,15 @@ const Dashboard = () => {
           <CustomFolderGrid
             folders={customFolders}
             selected={filter}
-            onSelect={setFilter}
+            // onSelect={setFilter}
             renamingFolderId={renamingFolderId}
             setRenamingFolderId={setRenamingFolderId}
             newFolderName={newFolderName}
             setNewFolderName={setNewFolderName}
             handleRename={handleRename}
+            onSelect={(folder)=>{
+             setFilter({name:folder.name.toLowerCase(), _id:folder._id, type: 'custom'});
+            }}
             />
           </>
         )
@@ -213,6 +221,7 @@ const Dashboard = () => {
       showDuplicateDialog={showDuplicateDialog}
       setShowDuplicateDialog={setShowDuplicateDialog}
       />  
+
       </main>
     </div>
     </div>

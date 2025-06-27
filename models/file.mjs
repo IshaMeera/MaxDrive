@@ -18,6 +18,11 @@ const fileSchema = new mongoose.Schema({
     folder:{
         type: String,
     },
+    customFolder:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Folder',
+        default: null,
+    },
     isTrashed: {type: Boolean, default: false},
     isStarred: {type: Boolean, default: false},
     

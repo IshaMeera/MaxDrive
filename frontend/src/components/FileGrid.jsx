@@ -12,7 +12,7 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick })=>{
   const clickTimeout = useRef(null);
   const linkRefs = useRef({});
 
-  const{files, handleStar, handleTrash, handleRestore, handleDeletePremanet, setRawFiles, setAllFiles, setFilteredFiles, loading, error} = useFileManager(filter);
+  const{files, handleStar, handleTrash, handleRestore, handleDeletePermanent, setRawFiles, setAllFiles, setFilteredFiles, loading, error} = useFileManager(filter);
   const [renamingFileId, setRenamingFileId] = useState(null);
   const [newFileName, setNewFileName] = useState('');
 
@@ -166,7 +166,8 @@ const getFileIcon = (filename) => {
             <div className='flex items-center justify-between px-4 py-1'>
             <div className="truncate text-sm text-black font-medium max-w-[70%]">
              <div className="flex items-center space-x-2 text-sm text-black font-medium">
-             {file.isStarred ? (
+            {!isTrashView &&(
+             file.isStarred ? (
                  <FaStar
                   size={18}
                   className="text-yellow-400 cursor-pointer hover:text-yellow-300 transition-colors duration-200 ease-in-out" 
@@ -184,6 +185,7 @@ const getFileIcon = (filename) => {
                     handleStar(file._id);
                   }}
                   />
+                )
               )}
               {getFileIcon(file.filename)}  
              <div className="grid grid-cols-4 gap-4 items-center w-full">
@@ -236,7 +238,12 @@ const getFileIcon = (filename) => {
                           autoFocus
                         />
                       ) : (
-                        <span>{file.nameWithoutExt}</span>
+                        <span
+                        className="block truncate max-w-[100px] sm:max-w-[120px] md:max-w-[160px]"
+                        title={file.nameWithoutExt}
+                        >
+
+                          {file.nameWithoutExt}</span>
                       )}
                       </div>
                       <div className="text-xs text-muted-foreground">{file.extLabel}</div>
@@ -276,67 +283,12 @@ const getFileIcon = (filename) => {
               handleStar={handleStar}
               handleTrash={handleTrash}
               handleRestore={handleRestore}
-              handleDeletePremanet={handleDeletePremanet}
+              handleDeletePermanent={handleDeletePermanent}
               onRename={(file)=>{
                 setRenamingFileId(file._id);
                 setNewFileName(file.nameWithoutExt);
               }}
           />
-           {/* {contextMenu.visible && contextMenu.file && (
-            <div
-              className="absolute custom-context-menu bg-white z-50 p-2 rounded-xl border shadow-lg w-48 transition-all animate-fade-in"
-              style={{ top: adjustedY, left: adjustedX }}
-            >
-              {isTrashView ? (
-                <>
-                <p
-                  onClick={()=>{handleRestore(contextMenu.file._id);
-                  setContextMenu({...contextMenu, visible: false});
-                  }}
-                className="text-sm px-3 py-2 hover:bg-blue-100 rounded-sm cursor-pointer transition text-left">
-                  Restore
-                </p>
-                <p
-                  onClick={() => {handleDeletePremanet(contextMenu.file._id);
-                  setContextMenu({ ...contextMenu, visible: false });
-                  }}
-                  className="text-sm px-3 py-2 hover:bg-red-200 rounded-sm cursor-pointer transition text-left">
-                  Delete Permanently
-                </p>
-                </>
-              
-              ) : (
-                <>
-              {filter !== 'trashed' && (
-              <p onClick={()=>{ handleStar(contextMenu.file._id);
-                console.log(`${filter === 'starred' ? 'Unstarred' : 'Starred'}:`, contextMenu.file.filename);
-                setContextMenu({...contextMenu, visible: false});
-              }}
-              className="text-sm px-3 py-2 hover:bg-blue-100 rounded-sm cursor-pointer transition text-left">
-                 <Star className="w-4 h-4 text-yellow-400" />
-                {filter === 'starred' ? 'Unstar' : 'Star'}
-              </p>
-              )}
-              <p onClick={()=>{
-                setRenamingFileId(contextMenu.file._id);
-                setNewFileName(contextMenu.file.nameWithoutExt);
-                setContextMenu({...contextMenu, visible:false});
-              }}
-              className="text-sm px-3 py-2 hover:bg-blue-100 rounded-sm cursor-pointer transition text-left">
-                Rename
-              </p>
-              <p onClick={() => { handleTrash(contextMenu.file._id);  
-                  console.log("Trashed:", contextMenu.file.filename);
-                  setContextMenu({ ...contextMenu, visible: false });
-                }}
-                className="text-sm px-3 py-2 hover:bg-red-100 rounded-sm cursor-pointer transition text-left">
-                 Trash
-              </p>
-              </>
-              )}
-            </div>
-          )} */}
-
           </div>
           )}
         </div>

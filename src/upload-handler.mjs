@@ -6,6 +6,7 @@ import {detectFileType, allowedMimeTypes} from "../utils/detectFileType.mjs"
 import fsPromises from "fs/promises";  //for promise async fs functions
 import fs from "fs"; //for sync fs functions
 import File from "../models/file.mjs";
+import mongoose from "mongoose";
 
 const router = express.Router();
 
@@ -136,11 +137,17 @@ router.post("/uploads", upload.single("myFile"), async (req, res) => {
       await fsPromises.mkdir(path.join(req.file.destination, targetFolder), {recursive: true});
       await fsPromises.rename(uploadedFilePath, newPath);
 
+      console.log('Incoming upload req.body:', req.body);
+
+      const isValidCustomFolder = mongoose.Types.ObjectId.isValid(req.body.customFolder);
+
       const savedFile = new File({
         filename: req.file.filename,
+        originalName: req.file.originalname,
         size: req.file.size,
         uploadDate: new Date(),
-        folder: targetFolder,
+        folder: req.body.customFolder ? null : targetFolder,
+        customFolder: isValidCustomFolder ? req.body.customFolder : null,
       });
       await savedFile.save();
 

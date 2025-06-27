@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { BASE_URL } from "@/lib/config";
 import { all } from "axios";
+import mongoose from "mongoose";
 
 const useFileManager = (filter = all) => {
     const [allFiles, setAllFiles] = useState([]);
     const [filteredFiles, setFilteredFiles] = useState([]);
-    const [categoriesWithFiles, setCategoriesWithFiles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [rawFiles, setRawFiles] = useState([]);
@@ -47,14 +47,25 @@ const useFileManager = (filter = all) => {
         console.log("Refetched all files:", allData.length);
 
         const filterValue = filter?.name || filter; 
+        
         const filtered = allData.filter((file)=>{
-        if (filterValue === 'all') return !file.isTrashed;
+        if (filterValue === 'all') return !file.isTrashed && !file.customFolder;
         if (filterValue === 'starred') return file.isStarred && !file.isTrashed;
         if (filterValue === 'trashed') return file.isTrashed;
-        const fileType = file.folder || file.type?.toLowerCase();
-        return fileType === filterValue.toLowerCase() && !file.isTrashed;
-        });
-  
+          //auto folder filtering
+        const systemFolder = file.folder || file.type?.toLowerCase();
+        if(systemFolder === filterValue.toLowerCase() && !file.isTrashed) return true;
+
+       if(
+        typeof filter === 'object' &&
+        filter.type ==='custom' &&
+        file.customFolder === filter._id &&
+        !file.isTrashed
+       )return true;
+
+       return false;
+      })
+
         setFilteredFiles(filtered);
         
       }catch(err){
@@ -132,7 +143,7 @@ const handleRestore = async(fileId) =>{
   }
 };
 
-const handleDeletePremanet = async(fileId) =>{
+const handleDeletePermanent = async(fileId) =>{
   try{
     const res = await fetch(`${BASE_URL}/api/files/${fileId}`, {
       method: "DELETE",
@@ -164,7 +175,7 @@ useEffect(() =>{
 },[]);
 
  return{files: filteredFiles, setAllFiles, loading, error, autoFolders, rawFiles, setRawFiles, setFilteredFiles,
-  handleStar, handleTrash, refetchFiles, filteredFiles, handleRestore, handleDeletePremanet};
+  handleStar, handleTrash, refetchFiles, filteredFiles, handleRestore, handleDeletePermanent};
  }
 
 export default useFileManager; 
