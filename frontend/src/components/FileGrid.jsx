@@ -151,7 +151,7 @@ const getFileIcon = (filename) => {
                   onDoubleClick={()=> linkRefs.current[file._id]?.current?.click()}
                   onContextMenu={(e) =>{
                     e.preventDefault();
-                    console.log('Right click detected:', e.pageX, e.pageY);
+                    // console.log('Right click detected:', e.pageX, e.pageY);
                     //console.log('Right click detected:', file);
                     setContextMenu({
                       visible: true,

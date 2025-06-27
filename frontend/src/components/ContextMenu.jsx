@@ -5,7 +5,7 @@ const ContextMenu = ({file, x, y, visible, onClose, inTrashView, handleStar, han
     handleRestore, handleDeletePermanent, onRename, filter}) => {
         const menuRef = useRef(null);
         
-        const virtualRef = useRef({
+        const virtualEl = {
             getBoundingClientRect: ()=>({
                 x,
                 y,
@@ -16,7 +16,7 @@ const ContextMenu = ({file, x, y, visible, onClose, inTrashView, handleStar, han
                 bottom: y,
                 right: x,
             })
-        })
+        }
 
         const {refs, floatingStyles, update} = useFloating({
             placement: 'right-start',
@@ -24,23 +24,12 @@ const ContextMenu = ({file, x, y, visible, onClose, inTrashView, handleStar, han
             strategy: 'absolute',
         });
 
-         useEffect(()=>{
-            refs.setReference(virtualRef.current);
-        }, [x,y,refs]);
-
-//attaching position manually sice v r triggering with coordinates
        useEffect(() => {
-        if (visible && refs.floating.current && refs.reference.current) {
-            return autoUpdate(refs.reference.current, refs.floating.current, update);
+        if (visible) {
+            refs.setReference(virtualEl)
+            return autoUpdate(virtualEl, refs.floating.current, update);
         }
-        }, [visible, update]);
-//       useEffect(() => {
-//   if (visible) {
-//     refs.setReference(virtualRef.current);
-//     return autoUpdate(virtualRef.current, refs.floating.current, update);
-//   }
-// }, [x, y, visible, update]);
-
+        }, [visible, update, x, y]);
 
 //close on outside click
         useEffect(() => {
@@ -53,28 +42,13 @@ const ContextMenu = ({file, x, y, visible, onClose, inTrashView, handleStar, han
             return() => document.removeEventListener('mousedown', handleClickOutside);
         }, [onClose]);
 
-        //  useEffect(() => {
-        //   console.log("👀 ContextMenu updated:", { visible, file, x, y });
-        // }, [visible, file, x, y]);
-        //  console.log('ContextMenu props:', {visible, file, x,y});
-
-        // if(!visible || !file){ 
-        //     console.log("Menu not rendering: visible =", visible, ", file =", file);
-        //     return null;
-        // };
-
-
         if(!visible || !file) return null;
         return(
         <>
      {visible && file && (
-    //  <div
-    //     ref={refs.floating}
-    //     style={floatingStyles}
-    //     className="absolute bg-white z-50 p-2 rounded-xl border shadow-lg w-48 animate-fade-in">
     <div
       ref={(node)=>{
-        refs.floating.current = node;
+        refs.setFloating(node);
         menuRef.current = node;
       }}
        style={floatingStyles}
