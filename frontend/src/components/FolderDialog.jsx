@@ -13,8 +13,15 @@ const FolderDialog = ({ folderName, setFolderName, onCreate, open, setOpen,
              <DialogHeader>
                 <DialogTitle>Create new folder</DialogTitle>
              </DialogHeader>
-
+      <form
+        onSubmit={(e) => {
+          e.preventDefault(); // Prevent actual form submission
+          onCreate();
+          setOpen(false);
+        }}
+      >
         <Input 
+            required
             value={folderName}
             onChange={(e) => setFolderName(e.target.value)}
             placeholder='Enter folder name'
@@ -24,14 +31,11 @@ const FolderDialog = ({ folderName, setFolderName, onCreate, open, setOpen,
             <DialogClose asChild>
                 <Button varient='outline'>Cancel</Button>
             </DialogClose>
-            <Button
-              onClick={()=>{
-                onCreate();
-                setOpen(false);
-              }}>
+            <Button type="submit">
                 Create
             </Button>
         </DialogFooter>
+      </form>
         </DialogContent>
         </Dialog>
               
