@@ -22,34 +22,32 @@ const Dashboard = () => {
   const [selectedFile, setSelectedFile] = useState(null); 
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [folderName, setFolderName] = useState("");
-  const [filter, setFilter] = useState('Recent Files');
   const [stableFolders, setStableFolders] = useState([]);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [renamingFolderId, setRenamingFolderId] = useState(null);
   const [newFolderName, setNewFolderName] = useState('');
+  const [filter, setFilter] = useState(()=>{
+    try{
+      const saved = sessionStorage.getItem('selectedFilter');
+      return saved ? JSON.parse(saved) : 'Recent Files';
+    }catch{
+      return 'Recent Files';
+    }
+   });
   const {filteredFiles, autoFolders, rawFiles} = useFileManager(filter);
-  //   ()=>{
-  //   try{
-  //   const saved = localStorage.getItem('filter');
-  //   return saved ? JSON.parse(saved):'all';
-  //   }catch{
-  //     return 'all';
-  //   }
-  //  });
 
-  // useEffect(()=>{
-  //   if(filter){
-  //     localStorage.setItem('selectedFilter', JSON.stringify(filter));
-  //   }
-  // }, [filter]);
+   useEffect(()=>{
+    sessionStorage.setItem('selectedFilter', JSON.stringify(filter))
+   },[filter]);
+  
+   
+  const handleFilterChange = (newFilter)=>{
+    setFilter(newFilter.toLowerCase().trim());
+  };
  
    const searchedFiles = filteredFiles.filter(file =>
     file.filename.toLowerCase().includes(searchTerm.toLowerCase())
   )
-
-  const handleFilterChange = (newFilter)=>{
-    setFilter(newFilter.toLowerCase().trim());
-  };
 
   const refetchFolders = async () => {
     try{
