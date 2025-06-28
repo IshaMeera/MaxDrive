@@ -22,7 +22,7 @@ const Dashboard = () => {
   const [selectedFile, setSelectedFile] = useState(null); 
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [folderName, setFolderName] = useState("");
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('Recent Files');
   const [stableFolders, setStableFolders] = useState([]);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [renamingFolderId, setRenamingFolderId] = useState(null);

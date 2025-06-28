@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { BASE_URL } from "@/lib/config";
 import { all } from "axios";
-import mongoose from "mongoose";
 
 const useFileManager = (filter = all) => {
     const [allFiles, setAllFiles] = useState([]);
@@ -47,11 +46,20 @@ const useFileManager = (filter = all) => {
         console.log("Refetched all files:", allData.length);
 
         const filterValue = filter?.name || filter; 
+
+        if(filterValue.toLowerCase() === 'recent files'){
+          const recentSorted = [...allData]
+            .filter(file => !file.isTrashed)
+            .sort((a,b)=> new Date(b.uploadDate)-new Date(a.uploadDate));
+            setFilteredFiles(recentSorted);
+            return;
+        }
         
         const filtered = allData.filter((file)=>{
         if (filterValue === 'all') return !file.isTrashed && !file.customFolder;
         if (filterValue === 'starred') return file.isStarred && !file.isTrashed;
         if (filterValue === 'trashed') return file.isTrashed;
+    
           //auto folder filtering
         const systemFolder = file.folder || file.type?.toLowerCase();
         if(systemFolder === filterValue.toLowerCase() && !file.isTrashed) return true;
