@@ -1,0 +1,9 @@
+API'S
+
+AbortController is a built-in browser API that lets you cancel fetch requests. Useful when:
+
+A component unmounts
+
+A user switches tabs quickly
+
+A state like filter changes quickly, avoiding old fetch results overwriting new ones
