@@ -1,35 +1,34 @@
 import React from 'react'
 import { Plus, Star, Trash2, Clock, FolderSearch } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { Card } from '@/components/ui/card'
 
-const SideBar = ({onCreateFolder, onFilterChange, setShowFolderDialog})=>{
+const SideBar = ({ onFilterChange, setShowFolderDialog})=>{
   const navigate = useNavigate();
 
   const actions = [
-    {label: "New Folder", icon: <Plus />, onClick: () => setShowFolderDialog(true)},
-    {label: "Starred", icon: <Star />, onClick: () =>  onFilterChange("Starred")},
-    {label: "Trash", icon: <Trash2 />, onClick: () => onFilterChange("Trashed")},
-    {label: "Recent", icon: <Clock />, onClick: () => onFilterChange('Recent Files')},
-    {label: "All Files", icon: <FolderSearch />, onClick:() => onFilterChange('all')}
+    {label: "New Folder", icon: <Plus size={18}/>, onClick: () => setShowFolderDialog(true)},
+    {label: "Starred", icon: <Star size={18}/>, onClick: () =>  onFilterChange("Starred")},
+    {label: "Trash", icon: <Trash2 size={18}/>, onClick: () => onFilterChange("Trashed")},
+    {label: "Recent", icon: <Clock size={18}/>, onClick: () => onFilterChange('Recent Files')},
+    {label: "All Files", icon: <FolderSearch size={18}/>, onClick:() => onFilterChange('all')}
 ];
- return(
-   <div className="p-1 space-y-3">
-      <h2 className="text-base font-semibold text-white mb-3">Quick Actions</h2>
-      <div className="flex flex-col gap-3">
+ return (
+    <div className="p-4 text-gray-800 w-56">
+      <h2 className="text-lg font-semibold mb-6">Quick Actions</h2>
+      <nav className="flex flex-col gap-1">
         {actions.map((action) => (
-          <Card
+          <button
             key={action.label}
             onClick={action.onClick}
-            className="flex items-center gap-2 p-2 cursor-pointer bg-zinc-800 text-gray-300 hover:bg-zinc-700 transition-all duration-200 rounded"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-700/50 hover:translate-x-1 transition-all duration-200 group"
           >
-            {action.icon}
-            <span className="font-medium">{action.label}</span>
-          </Card>
+            <span className="text-gray-800 group-hover:text-white transition-colors">{action.icon}</span>
+            <span className="text-sm font-medium group-hover:text-white">{action.label}</span>
+          </button>
         ))}
-      </div>
+      </nav>
     </div>
- )
-}
+  );
+};
 
 export default SideBar;

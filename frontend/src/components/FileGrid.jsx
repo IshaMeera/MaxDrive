@@ -3,23 +3,27 @@ import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BASE_URL } from "@/lib/config";
 import  EmptyFolder from "@/assets/EmptyFolder.svg?react";
-import { Image, Video, FileText, FileArchive, File, FileSpreadsheet } from "lucide-react";
+import { Image, Video, FileText, FileArchive, File, FileSpreadsheet} from "lucide-react";
 import useFileManager from "@/hooks/useFileManager";
 import {FaStar, FaRegStar} from 'react-icons/fa';
 import ContextMenu from "./ContextMenu";
+import { FaFilePdf, FaFileArchive, FaFileExcel, FaFileAlt } from 'react-icons/fa';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
-const FileGrid = ({filter = "", searchTerm = "", onFileClick })=>{
+
+const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = 'table', setViewMode = '' })=>{
   const clickTimeout = useRef(null);
   const linkRefs = useRef({});
-
   const{files, handleStar, handleTrash, handleRestore, handleDeletePermanent, setRawFiles, setAllFiles, setFilteredFiles, loading, error} = useFileManager(filter);
+  
   const [renamingFileId, setRenamingFileId] = useState(null);
   const [newFileName, setNewFileName] = useState('');
-
   const [contextMenu, setContextMenu] = useState({visible: false, x:0, y:0, file: null,});
+  
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if(!e.target.closest('.custom-context-menu')){
+      if(!e.target.closest('.custom-context-menu')){  
       setContextMenu((prev) => ({ ...prev, visible: false }));
       }
     };
@@ -60,14 +64,11 @@ const extDisplayMap = {
   );
   const filesWithPreview = searchedFiles.map((file) =>{
   const extenstion = file.filename.split('.').pop().toLowerCase();
-  const extLabel = extDisplayMap[extenstion] || `${extenstion.toUpperCase()} File`;
-  const nameWithoutExt = file.filename.replace(`.${extenstion}`, '')
-
 return {
     ...file,
     extenstion,
-    extLabel,
-    nameWithoutExt,
+    extLabel: extDisplayMap[extenstion] || `${extenstion.toUpperCase()} File`,
+    nameWithoutExt: file.filename.replace(`.${extenstion}`, ''),
     mimetype: mimeTypes[extenstion] || 'application/octet-stream',
     url: `${BASE_URL}/uploads/${file.folder}/${file.filename}`
    }  
@@ -94,22 +95,46 @@ const getFileIcon = (filename) => {
       return <File className="w-4 h-4 text-muted-foreground mr-2" />;
   }
 };
-    return (
-        <div>
-        <h1 className="font-bold mb-6 text-blue-800 p-2 rounded shadow-md">
-          Files in:{' '}
-          <span className="capitalize text-primary">
-            {typeof filter === 'string'?filter : filter?.name || "Untitled"}
-          </span>
-        </h1>
 
-        {files.length === 0 ? (
+    if(files.length === 0) {
+      return(
           <div className="flex flex-col items-center justify-center h-[60vh] text-center text-muted-foreground">
             <EmptyFolder className="w-40 h-40 mb-4 opacity-70"/>
             <p className="text-lg font-medium">No files here yet</p>
             <p className="text-sm text-muted-foreground">Upload your first file to get started.</p>
           </div>
-           ) : (
+    );
+  }
+
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-6 p-2 rounded shadow-md bg-white">
+        <div className="flex items-center gap-2">
+        {/* <span className="font-bold text-blue-800">Files in:</span> */}
+          <span className="capitalize text-primary font-medium">
+            {typeof filter === 'string' ? filter: filter?.name || 'Untitled'}
+            </span>
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant='outline' className='text-sm'>
+              View
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end'>
+            <DropdownMenuItem onClick={()=>setViewMode('table')}>
+              List
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={()=>setViewMode('preview')}>
+              Preview
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        </div>
+        
+        {viewMode === 'table' ? (
+          <>
           <div className="relative">
           <ScrollArea className="h-[80vh] pr-2">
             <div className="grid grid-cols-4 gap-4 px-6 py-2 text-sm font-zinc-400 text-muted-foreground border-b text-left">
@@ -143,7 +168,7 @@ const getFileIcon = (filename) => {
                 e.preventDefault();
                 linkRefs.current[file._id]?.current?.click();
               };
-              
+            
               return(
                 <Card 
                   key={file._id}
@@ -166,8 +191,7 @@ const getFileIcon = (filename) => {
             <div className='flex items-center justify-between px-4 py-1'>
             <div className="truncate text-sm text-black font-medium max-w-[70%]">
              <div className="flex items-center space-x-2 text-sm text-black font-medium">
-            {!isTrashView &&(
-             file.isStarred ? (
+            {!isTrashView && (file.isStarred ? (
                  <FaStar
                   size={18}
                   className="text-yellow-400 cursor-pointer hover:text-yellow-300 transition-colors duration-200 ease-in-out" 
@@ -290,8 +314,54 @@ const getFileIcon = (filename) => {
               }}
           />
           </div>
-          )}
+          </>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {filesWithPreview.map((file)=>(
+              <div key={file._id} className="relative group flex flex-col items-center justify-center p-2 rounded overflow-hidden hover:bg-zinc-700 cursor-pointer transition">
+                {file.mimetype.startsWith('image/')&& (
+                  <img src={file.url} alt={file.filename} className="w-full h-32 object-cover rounded group-hover:scale-105 transition"/>
+                )}
+                {file.mimetype.startsWith('video/') &&(
+                  <video src={file.url} className="w-full h-32 object-cover rounded transition-transform duration-300 group-hover:scale-105"
+                  controls  
+                  muted
+                  autoPlay
+                  loop
+                  />
+                )}
+                {/* Icons for other types epcept vdo or img */}
+            {!file.mimetype.startsWith("image/") &&
+              !file.mimetype.startsWith("video/") && (
+                <div className="h-32 flex items-center justify-center">
+                  {file.mimetype.includes("pdf") && (
+                    <FaFilePdf size={48} className="text-red-400" />
+                  )}
+                  {file.mimetype.includes("zip") && (
+                    <FaFileArchive siz
+                    Icons for other types epcept vdo or imge={48} className="text-yellow-400" />
+                  )}
+                  {(file.mimetype.includes("excel") ||
+                    file.mimetype.includes("spreadsheet")) && (
+                    <FaFileExcel size={48} className="text-green-400" />
+                  )}
+                  {file.mimetype.startsWith("application/") &&
+                    !file.mimetype.includes("pdf") &&
+                    !file.mimetype.includes("zip") &&
+                    !file.mimetype.includes("excel") && (
+                      <FaFileAlt size={48} className="text-blue-400" />
+                    )}
+                    </div>
+              )}
+              <span className="mt-2 text-xs font-medium text-gray-300 break-all text-center">
+                {file.nameWithoutExt}
+              </span>
+              </div>
+            ))} 
+            </div>
+    )}      
         </div>
+        
     )
 }
 

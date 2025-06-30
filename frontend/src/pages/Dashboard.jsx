@@ -26,6 +26,7 @@ const Dashboard = () => {
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [renamingFolderId, setRenamingFolderId] = useState(null);
   const [newFolderName, setNewFolderName] = useState('');
+  const [viewMode, setViewMode] = useState('table');
   const [filter, setFilter] = useState(()=>{
     try{
       const saved = sessionStorage.getItem('selectedFilter');
@@ -196,16 +197,22 @@ const Dashboard = () => {
           </>
         )
         }
-            <FolderGrid 
-              folders={stableFolders}
-              selected={filter?.name || filter}
-              onSelect={(type) => setFilter(type)}
-            />
-
         </div>
-    <FileGrid filter={filter} searchTerm = {searchTerm} onFileClick={(file) => { 
-       setSelectedFile(file)}}
-      />
+
+    <div>
+        <FolderGrid 
+          folders={stableFolders}
+          selected={filter?.name || filter}
+          onSelect={(type) => setFilter(type)}
+        />
+
+        
+         <FileGrid filter={filter} searchTerm = {searchTerm} 
+          onFileClick={(file) => setSelectedFile(file)}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          />
+    </div>
 
     {selectedFile && (<FileViewer file={selectedFile} onClose={() => setSelectedFile(null)} />
        )}
