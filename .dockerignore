@@ -1,0 +1,18 @@
+node_modules
+dist
+*.log
+.env
+uploads/
+
+# Ignore virus scan utility files 
+utils/getScanReportWithPolling.mjs
+services/virus-scan.mjs
+utils/uploadToVirusTotal.mjs
+
+# Test files or local-only components
+frontend/src/components/TestComponent.jsx
+src/test-run-db.mjs
+
+# .git and local git metadata
+.git
+.gitignore
