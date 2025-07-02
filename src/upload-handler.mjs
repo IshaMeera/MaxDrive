@@ -133,6 +133,7 @@ router.post("/uploads", upload.single("myFile"), async (req, res) => {
         }
 
       const newPath = path.join(req.file.destination, targetFolder, req.file.filename);
+      console.log('Moving file to:', newPath);
 
       await fsPromises.mkdir(path.join(req.file.destination, targetFolder), {recursive: true});
       await fsPromises.rename(uploadedFilePath, newPath);
@@ -146,10 +147,16 @@ router.post("/uploads", upload.single("myFile"), async (req, res) => {
         originalName: req.file.originalname,
         size: req.file.size,
         uploadDate: new Date(),
-        folder: req.body.customFolder ? null : targetFolder,
+        physicalFolder: targetFolder || 'others',  //field tat saves files to pdf,img,etc
+        folder: null,
         customFolder: isValidCustomFolder ? req.body.customFolder : null,
       });
       await savedFile.save();
+
+    //   console.log("Saving file to DB with:", {
+    //   filename: req.file.filename,
+    //   physicalFolder: targetFolder,
+    // });
 
       res.status(200).json({
         message: "File uploaded successfully",

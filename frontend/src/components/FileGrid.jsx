@@ -70,7 +70,7 @@ return {
     extLabel: extDisplayMap[extenstion] || `${extenstion.toUpperCase()} File`,
     nameWithoutExt: file.filename.replace(`.${extenstion}`, ''),
     mimetype: mimeTypes[extenstion] || 'application/octet-stream',
-    url: `${BASE_URL}/uploads/${file.folder}/${file.filename}`
+    url: `${BASE_URL}/uploads/${file.physicalFolder}/${file.filename}`
    }  
   });
 const getFileIcon = (filename) => {

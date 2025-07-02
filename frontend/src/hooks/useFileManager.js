@@ -33,9 +33,6 @@ const useFileManager = (filter = all) => {
       }else{
         console.log("Filter did not match any condition");
       }
-      // } else if(normalizedFilter !== "all" && normalizedFilter !== "View all files"){
-      //   url += `?folder=${normalizedFilter}`;
-      // }
 
       try{
         const response = await fetch(url, {signal: controller.signal});
@@ -54,28 +51,26 @@ const useFileManager = (filter = all) => {
             setFilteredFiles(recentSorted);
             return;
         }
-        
-        const filtered = allData.filter((file)=>{
-        if (filterValue === 'all') return !file.isTrashed && !file.customFolder;
-        if (filterValue === 'starred') return file.isStarred && !file.isTrashed;
-        if (filterValue === 'trashed') return file.isTrashed;
-    
-          //auto folder filtering
-        const systemFolder = file.folder || file.type?.toLowerCase();
-        if(systemFolder === filterValue.toLowerCase() && !file.isTrashed) return true;
+        const normalizedFilter = filterValue.toLowerCase(); 
+        const filtered = allData.filter(file =>{
+          if(file.isTrashed && normalizedFilter !== 'trashed') return false;
 
-       if(
-        typeof filter === 'object' &&
-        filter.type ==='custom' &&
-        file.customFolder === filter._id &&
-        !file.isTrashed
-       )return true;
+          if(normalizedFilter === 'trashed') return file.isTrashed;
 
-       return false;
-      })
+          if(normalizedFilter === 'starred') return file.isStarred && !file.isTrashed;
 
+          if(autoFolders.includes(normalizedFilter)){
+            return file.physicalFolder?.toLowerCase().trim() === normalizedFilter.trim() && !file.isTrashed;
+          }
+          if(typeof filter === 'object' && filter.type === 'custom'){
+            return file.customFolder === filter._id && !file.isTrashed;
+          }
+          if(normalizedFilter === 'all'){
+            return !file.isTrashed;
+          }
+          return false;
+        })
         setFilteredFiles(filtered);
-        
       }catch(err){
        if(err.name === 'AbortError'){
         console.log('Fetch aborted');

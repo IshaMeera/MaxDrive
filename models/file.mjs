@@ -15,6 +15,9 @@ const fileSchema = new mongoose.Schema({
     originalName:{
         type: String
     },
+    physicalFolder:{   //on disk pdf,doc,img etc 
+        type: String
+    },
     folder:{
         type: String,
     },

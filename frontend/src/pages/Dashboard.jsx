@@ -150,13 +150,13 @@ const Dashboard = () => {
     rawFiles
         .filter(file => !file.isTrashed)
         .forEach(file => {
-          const folder = file.folder?.toLowerCase();
+          const folder = file.physicalFolder?.toLowerCase();
           if(folder && autoFolders.includes(folder)){
             folderSet.add(folder);
           }
         });
         const newFolders = Array.from(folderSet);
-        //  console.log("⏳ Recalculating folders from raw files:", newFolders);
+        //  console.log(" Recalculating folders from raw files:", newFolders);
 
       // Prevent infinite loop by updating state only if it's actually different 
       const areEqual = stableFolders.length === newFolders.length &&
