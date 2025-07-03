@@ -3,8 +3,9 @@ import File from "../../models/file.mjs";
 import path from 'path';
 import fs from 'fs/promises';
 
+
 const router = express.Router();
-const uploadDir = path.resolve('../uploads');
+const uploadDir = path.join(process.cwd(),'uploads');
 
 //Get all files
 router.get('/', async (req,res)=>{
@@ -91,9 +92,10 @@ router.patch('/:id/rename', async(req, res)=>{
     console.log('Renaming inside folder:', folderName);
     console.log('file.filename:', file.filename);
 
-
-    const oldPath = path.join(uploadDir, folderName, file.filename);
-    const newPath = path.join(uploadDir, folderName, newName);
+    const oldPath = path.join(process.cwd(),'uploads', folderName, file.filename);
+    const newPath = path.join(process.cwd(),'uploads', folderName, newName);
+    console.log('process.cwd():', process.cwd());
+    console.log('uploadDir:', uploadDir);
     console.log('Old path:', oldPath);
     console.log('New path:', newPath);
 

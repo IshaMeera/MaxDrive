@@ -18,7 +18,7 @@ const port = process.env.PORT || 3000;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-app.use('/uploads', express.static(path.join(__dirname, '..' ,'uploads')));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.use((req, res, next) => {
   console.log(`Incoming request: ${req.method} ${req.url}`);

@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export async function createUploadDirs(){
-    const uploadDir = path.join(__dirname, '../uploads');
+    const uploadDir = path.join(process.cwd(), 'uploads');
 
     const dirs = ['pdf','images','archives','documents','excel','videos','csv','zips','others'];
 

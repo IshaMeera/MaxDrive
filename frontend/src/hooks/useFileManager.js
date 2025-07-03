@@ -114,6 +114,7 @@ const handleStar = async(fileId) =>{
 
 const handleTrash = async(fileId) =>{
     try{
+        console.log(`Sending req to: ${BASE_URL}/api/files/${fileId}/trash`);
         const res = await fetch(`${BASE_URL}/api/files/${fileId}/trash`, {
             method: "PATCH",
             headers: {

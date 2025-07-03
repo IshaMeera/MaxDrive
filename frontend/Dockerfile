@@ -1,22 +1,32 @@
-#Dockerfile
+#Dockerfile frontend
 
-#1. use official node image
-FROM node:18
+#stage 1: build
+FROM node:18      AS build
 
-#2. set working directory
+#set working directory
 WORKDIR /app
 
-#3. copy package.json and package-lock.json file
+#copy package.json and package-lock.json file
 COPY package*.json ./
 
-#4. install dependencies
+#install dependencies
 RUN npm install
 
-#5. copy rest of the code
+#copy rest of the code
 COPY . .
+RUN npm run build 
+
+#stage 2: server with nginx
+FROM nginx:alpine
+
+#copy built frontend
+COPY --from=build /app/dist /usr/share/nginx/html
+
+#copy custom nginx config if needed
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 #6. Expose port
-EXPOSE 5173
+EXPOSE 80
 
 #7. Start the app
-CMD ["npm", "run", "dev", "--", "--host"]
+CMD ["nginx", "-g", "daemon off;"]
