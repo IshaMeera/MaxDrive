@@ -7,11 +7,14 @@ const folderSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
+        sessionID:{
+            type: String,
+            required: true,
+            index: true,
     },
-    {
+ }, {
         timestamps: true, //autogenerate createdAt and updatedAt
-    }
-);
+    });
 
 const folder = mongoose.model('Folder', folderSchema);
 export default folder;

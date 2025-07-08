@@ -35,7 +35,7 @@ const Dashboard = () => {
       return 'Recent Files';
     }
    });
-  const {filteredFiles, autoFolders, rawFiles} = useFileManager(filter);
+   const {filteredFiles, autoFolders, rawFiles} = useFileManager(filter);
 
    useEffect(()=>{
     sessionStorage.setItem('selectedFilter', JSON.stringify(filter))
@@ -48,36 +48,40 @@ const Dashboard = () => {
  
    const searchedFiles = filteredFiles.filter(file =>
     file.filename.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  );
 
-  const refetchFolders = async () => {
-    try{
-    const res = await fetch(`${BASE_URL}/api/folders`);
-    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+  // const refetchFolders = async () => {
+  //   try{
+  //   const res = await fetch(`${BASE_URL}/api/folders`,{
+  //     credentials: "include"
+  //   });
+  //   if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     
-    const data = await res.json();
-    setFolders(data);
-    }catch(err){
-      console.error('Error fetching folders:', err);
-      }
-   };
+  //   const data = await res.json();
+  //   setFolders(data);
+  //   }catch(err){
+  //     console.error('Error fetching folders:', err);
+  //     }
+  //  };
 
-   useEffect(() =>{
-    refetchFolders();
-   }, []);
+  //  useEffect(() =>{
+  //   refetchFolders();
+  //  }, []);
 
-  useEffect(()=>{
-    const fetchCustomFolder = async()=>{
-      try{
-        const res = await fetch(`${BASE_URL}/api/folders`);
-        const data = await res.json();
-        setCustomFolders(data); //array
-      }catch(err){
-        console.error('Failed to fetch folders', err);
-      }
-    }
-    fetchCustomFolder();
-  }, []);
+  // useEffect(()=>{
+  //   const fetchCustomFolder = async()=>{
+  //     try{
+  //       const res = await fetch(`${BASE_URL}/api/folders`,{
+  //         credentials: "include"
+  //       });
+  //       const data = await res.json();
+  //       setCustomFolders(data); //array
+  //     }catch(err){
+  //       console.error('Failed to fetch folders', err);
+  //     }
+  //   }
+  //   fetchCustomFolder();
+  // }, []);
    
   const handleCreateFolder = async() =>{
     if(!folderName.trim()) return;
@@ -85,6 +89,7 @@ const Dashboard = () => {
     try{
       const res = await fetch(`${BASE_URL}/api/folders`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -120,6 +125,7 @@ const Dashboard = () => {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({name: trimmedName}),
+        credentials: "include"
       });
       if(res.status === 409){
         setShowDuplicateDialog(true);

@@ -2,6 +2,7 @@ import express from "express";
 import File from "../../models/file.mjs"; 
 import path from 'path';
 import fs from 'fs/promises';
+import session from "express-session";
 
 
 const router = express.Router();
@@ -12,8 +13,16 @@ router.get('/', async (req,res)=>{
     try {
     const { type, starred, trash } = req.query;
     console.log('Incoming request:', req.url);
+
+    if(!req.session.created){
+      req.session.created = true;
+      console.log('Session initialized:', req.sessionID)
+    }
     
-    let query = {};
+    let query = {
+      sessionID: req.sessionID
+    };  
+    
     //applying filter based on the query parameter
     if (type) query.physicalFolder = type;
     if (starred === 'true') query.isStarred = true;
@@ -24,8 +33,6 @@ router.get('/', async (req,res)=>{
       query.isTrashed = { $ne: true };  // Optional: Exclude trashed files by default
     }
     console.log("Query built for Mongo:", JSON.stringify(query, null, 2));
-    console.log({ query, reqQuery: req.query });
-
 
     const files = await File.find(query);
     res.json(files);
@@ -39,7 +46,9 @@ router.get('/', async (req,res)=>{
 router.get("/", async(req, res)=>{
     const {starred, trashed} = req.query;
 
-    let filter = {};
+    let filter = {
+      sessionID: req.sessionID
+    };
     if(starred === 'true') filter.isStarred = true;
     if(trashed === 'true') filter.isTrashed = true;
 
@@ -49,19 +58,30 @@ router.get("/", async(req, res)=>{
 
 // PATCH to toggle star
 router.patch("/:id/star", async(req, res)=>{
-    const file = await File.findById(req.params.id);
+  try{
+    const file = await File.findOne({
+      _id: req.params.id,
+      sessionID: req.sessionID
+    });
+    
     if(!file) return res.status(404).json({error: "Not found"});
 
     file.isStarred = !file.isStarred;
     await file.save();
     res.json({message: 'Star toggled', file});
+}catch(err){
+  console.error('Error toggling star:', err);
+  res.status(500).json({error: "Internal server error"})
+}
 });
 
 //PATCH to move to trash 
 router.patch('/:id/trash', async(req, res)=>{
     try{
-      const {id} = req.params;
-      const file = await File.  findById(id);;
+      const file = await File.findOne({
+        _id: req.params.id,
+        sessionID: req.sessionID
+      })
       if(!file) return res.status(404).json({error: 'File not found'});
 
       file.previousFolder = file.physicalFolder;
@@ -74,16 +94,17 @@ router.patch('/:id/trash', async(req, res)=>{
       console.error('Error trashing file:', err);
       res.status(500).json({error: 'Failed to trash file'});
     }
-
 });
 
 //PATCH to rename a file
 router.patch('/:id/rename', async(req, res)=>{
   try{
     const {newName} = req.body;
-    const fileId = req.params.id;
-
-    const file = await File.findById(fileId);
+    
+    const file = await File.findOne({
+       _id: req.params.id,
+        sessionID: req.sessionID
+    });
     if (!file) {
       return res.status(404).json({ message: 'File not found' });
     }
@@ -114,8 +135,10 @@ router.patch('/:id/rename', async(req, res)=>{
 //PATCH to restore a trashed file
   router.patch('/:id/restore', async(req, res)=>{
     try{
-      const {id} = req.params;
-      const file = await File.findById(id);
+      const file = await File.findOne({
+        _id: req.params.id,
+        sessionID: req.sessionID
+      });
       if(!file) return res.status(404).json({error: 'File not found'});
 
       file.isTrashed = false;
@@ -134,8 +157,10 @@ router.patch('/:id/rename', async(req, res)=>{
 
 router.delete('/:id', async(req, res)=>{
     try{
-      const {id} = req.params;
-      const file = await File.findByIdAndDelete(id);
+      const file = await File.findByIdAndDelete({
+         _id: req.params.id,
+        sessionID: req.sessionID
+      });
 
       if(!file) return res.status(404).json({error: 'File not found'});
       const filePath = path.join(uploadDir, file.physicalFolder, file.filename);

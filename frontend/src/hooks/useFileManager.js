@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { BASE_URL } from "@/lib/config";
 import { all } from "axios";
+import { useCustomFolders } from '@/context/CustomFolderContext';
 
 const useFileManager = (filter = all) => {
+    const {customFolders, setCustomFolders} = useCustomFolders();
     const [allFiles, setAllFiles] = useState([]);
     const [filteredFiles, setFilteredFiles] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -11,15 +13,30 @@ const useFileManager = (filter = all) => {
 
     const autoFolders = ["images", "pdf", "videos", "documents", "excel", "zips", "archives", "csv", "others"];
 
-    const refetchFiles = async(controller = new AbortController()) => {
+    useEffect(() =>{
+  // console.log("useEffect triggered in useFileManager")
+  const establishSessionAndFetch = async() =>{
+    if(customFolders.length === 0){
+      const foldersRes = await fetch(`${BASE_URL}/api/folders`,{
+        credentials: 'include'
+      });
+      const foldersData = await foldersRes.json();
+      setCustomFolders(foldersData);    
+    }
+  }
+    establishSessionAndFetch();
+  },[]);
 
+    const refetchFiles = async(controller = new AbortController()) => {
     const normalizedFilter = typeof filter === 'string'    
        ?filter.toLowerCase().trim()
        :(filter?.name?.toLowerCase().trim() || 'all');
-
       console.log('Normalized filter:', normalizedFilter);
+
       let url = `${BASE_URL}/api/files`;
-      const filtered = all
+
+      // const filtered = all;
+
       if (normalizedFilter === "starred") {
         url += '?starred=true';
       } else if (normalizedFilter === "trashed") {
@@ -35,13 +52,16 @@ const useFileManager = (filter = all) => {
       }
 
       try{
-        const response = await fetch(url, {signal: controller.signal});
+        const response = await fetch(url, {
+          signal: controller.signal,
+          credentials: "include"
+        });
+        
         if(!response.ok) throw new Error('Failed tp fetch files');
-
         const allData = await response.json();                    //console.log('Filters:', filter);  console.log('Files:', files);  console.log('Fetching url:', url);        
+        
         setAllFiles(allData);  
-        console.log("Refetched all files:", allData.length);
-
+        
         const filterValue = filter?.name || filter; 
 
         if(filterValue.toLowerCase() === 'recent files'){
@@ -101,6 +121,7 @@ const handleStar = async(fileId) =>{
         const res = await fetch(`${BASE_URL}/api/files/${fileId}/star`,{
           method: "PATCH",
           headers: {"Content-Type":"application/json"},
+          credentials: "include"
         })
         if(!res.ok){
           targetFile.isStarred = !targetFile.isStarred;
@@ -117,9 +138,8 @@ const handleTrash = async(fileId) =>{
         console.log(`Sending req to: ${BASE_URL}/api/files/${fileId}/trash`);
         const res = await fetch(`${BASE_URL}/api/files/${fileId}/trash`, {
             method: "PATCH",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: {"Content-Type": "application/json"},
+            credentials: "include"
         });
         if(!res.ok) throw new Error('Failed to move file to trash');
         refetchFiles(); //refetch updated file list
@@ -132,6 +152,7 @@ const handleRestore = async(fileId) =>{
  try {
     const res = await fetch(`${BASE_URL}/api/files/${fileId}/restore`, {
       method: "PATCH",
+      credentials: "include"
     });
     const result = await res.json();
 
@@ -151,6 +172,7 @@ const handleDeletePermanent = async(fileId) =>{
   try{
     const res = await fetch(`${BASE_URL}/api/files/${fileId}`, {
       method: "DELETE",
+      credentials: "include"
   });
   if(!res.ok) throw new Error('Permanent delete failed');
   await refetchFiles(); //refetch updated file list
@@ -163,20 +185,7 @@ useEffect(()=>{
       const controller = new AbortController();
       refetchFiles(controller);
       return () => controller.abort();
-    }, [filter]);
-
-useEffect(() =>{
-  const fetchFiles = async() =>{
-    try{
-      const res = await fetch(`${BASE_URL}/api/files`);
-      const data = await res.json();
-      setRawFiles(data);
-    }catch(err){
-      console.error('Failed to fetch files:', err);
-    }
-  }
-  fetchFiles();
-},[]);
+    }, [filter]); //runs on first mount n filter changes
 
  return{files: filteredFiles, setAllFiles, loading, error, autoFolders, rawFiles, setRawFiles, setFilteredFiles,
   handleStar, handleTrash, refetchFiles, filteredFiles, handleRestore, handleDeletePermanent};

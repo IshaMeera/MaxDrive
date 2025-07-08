@@ -150,6 +150,7 @@ router.post("/uploads", upload.single("myFile"), async (req, res) => {
         physicalFolder: targetFolder || 'others',  //field tat saves files to pdf,img,etc
         folder: null,
         customFolder: isValidCustomFolder ? req.body.customFolder : null,
+        sessionID: req.sessionID,
       });
       await savedFile.save();
 

@@ -5,7 +5,14 @@ const router = express.Router();
 
 router.get('/', async(req, res)=>{
     try{
-        const folders = await Folder.find().sort({createdAt: -1});
+        console.log('Incoming req:', req.url);
+
+        if(!req.session.created){
+            req.session.created = true;
+            console.log('Session initialized:', req.sessionID);
+        }
+
+        const folders = await Folder.find({sessionID: req.sessionID}).sort({createdAt: -1});
         res.json(folders);
     }catch(err){
         res.status(500).json({err: 'Failed to fetch folders'});
@@ -19,12 +26,17 @@ router.post('/', async(req, res)=>{
         if(!name || name.trim()===''){
             return res.status(400).json({error: 'Folder name is required'});
         }
-        const exists = await Folder.findOne({name: {$regex: `^${name}`, $options: 'i'}});
+        const exists = await Folder.findOne({name: {$regex: `^${name}`, $options: 'i'},
+                                    sessionID: req.sessionID});
         if(exists){
             return res.status(409).json({message: 'Folder already exists'});
         }
 
-        const folder = new Folder({name: name.trim() });
+        const folder = new Folder({
+            name: name.trim(),
+            sessionID: req.sessionID,
+        });
+
         await folder.save();
         res.status(201).json(folder);
     }catch(err){

@@ -39,3 +39,12 @@
 .read-the-docs {
   color: #888;
 }
+
+.Toastify__toast{
+  max-width: 70%;
+}
+@media (min-width: 640px) {
+  .Toastify__toast{
+    max-width: 400px;
+  }
+}

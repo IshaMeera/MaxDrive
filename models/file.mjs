@@ -31,6 +31,10 @@ const fileSchema = new mongoose.Schema({
     
     previousFolder:{
         type: String,
+    },
+    sessionID: {
+        type: String,
+        required: true,
     }
 
 });

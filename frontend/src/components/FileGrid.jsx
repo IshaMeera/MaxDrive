@@ -228,6 +228,7 @@ const getFileIcon = (filename) => {
                                   method: 'PATCH',
                                   headers: {'Content-Type': 'application/json'},
                                   body: JSON.stringify({ newName: finalName }),
+                                  credentials: "include"
                                 });
 
                                 const result = await response.json();
