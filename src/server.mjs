@@ -44,7 +44,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false, //true if using https
+    // secure: false, //true if using https
     httpOnly: true,
     maxAge: 1000*60*60*24,
     sameSite: 'lax'
