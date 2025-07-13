@@ -130,15 +130,14 @@ router.post("/uploads", upload.single("myFile"), async (req, res) => {
                 break;
            default:
                 targetFolder = 'others';
-        }
+        } 
 
       const newPath = path.join(req.file.destination, targetFolder, req.file.filename);
       console.log('Moving file to:', newPath);
 
       await fsPromises.mkdir(path.join(req.file.destination, targetFolder), {recursive: true});
       await fsPromises.rename(uploadedFilePath, newPath);
-
-      console.log('Incoming upload req.body:', req.body);
+      console.log("File moved successfully.");
 
       const isValidCustomFolder = mongoose.Types.ObjectId.isValid(req.body.customFolder);
 

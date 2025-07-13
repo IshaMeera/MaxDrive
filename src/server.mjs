@@ -28,6 +28,17 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/download/:folder/:filename', (req,res)=>{
+  const filePath = path.join(__dirname, 'uploads', req.params.folder, req.params.filename);
+
+  res.download(filePath, req.params.filename, (err)=>{
+    if(err){
+      console.error('Download error:', err);
+      return res.status(404).send('File not found.');
+    }
+  })
+})
+
 app.use(cors({
   origin: isDev ? 'http://localhost:5173' : undefined,
   credentials: isDev?true:false,
@@ -56,15 +67,6 @@ app.use('/api/files', filesRoutes);
 app.use('/api/folders', folderRoutes);
 
 app.use(express.static(path.join(__dirname,'../public')));  
-
-// app.get('/api/test-session', (req,res)=>{
-//   if(!req.session.views){
-//     req.session.views = 1;
-//   }else{
-//     req.session.views++;
-//   }
-//   res.json({message:`You have visited ${req.session.views} times`}); //tis vll create cookie connect.sid in the browser
-// }) //& on nxt tym, it vll remember the sess
 
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);

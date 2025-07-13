@@ -2,8 +2,6 @@ import express from "express";
 import File from "../../models/file.mjs"; 
 import path from 'path';
 import fs from 'fs/promises';
-import session from "express-session";
-
 
 const router = express.Router();
 const uploadDir = path.join(process.cwd(),'uploads');
@@ -84,10 +82,13 @@ router.patch('/:id/trash', async(req, res)=>{
       })
       if(!file) return res.status(404).json({error: 'File not found'});
 
-      file.previousFolder = file.physicalFolder;
-      file.isTrashed = true;
-      file.physicalFolder = 'trash';
+      file.isTrashed = true;    
 
+      file.isTrashed = true;
+      file.previousFolder = file.physicalFolder;
+      file.physicalFolder = 'trash';
+      file.folder = null;
+      
       await file.save();
       res.json({message: 'File trashed successfully', file});
     }catch(err){
@@ -143,6 +144,9 @@ router.patch('/:id/rename', async(req, res)=>{
 
       file.isTrashed = false;
       //restore to previous folder if available
+      if(file.previousFolder){
+      file.physicalFolder = file.previousFolder;
+      }
       file.folder = file.previousFolder || null;
       file.previousFolder = undefined;
       

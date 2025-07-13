@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useFloating, offset, shift, flip, autoUpdate } from '@floating-ui/react-dom';
 
 const ContextMenu = ({file, x, y, visible, onClose, inTrashView, handleStar, handleTrash, 
-    handleRestore, handleDeletePermanent, onRename, filter}) => {
+    handleRestore, handleDeletePermanent, onRename, filter, setShareFile}) => {
         const menuRef = useRef(null);
         
-        const virtualEl = {
+        const virtualEl = useMemo(() => ({
             getBoundingClientRect: ()=>({
                 x,
                 y,
@@ -16,20 +16,19 @@ const ContextMenu = ({file, x, y, visible, onClose, inTrashView, handleStar, han
                 bottom: y,
                 right: x,
             })
-        }
+        }), [x,y]);
 
         const {refs, floatingStyles, update} = useFloating({
             placement: 'right-start',
             middleware: [offset(6), flip(), shift()],
             strategy: 'absolute',
         });
-
        useEffect(() => {
         if (visible) {
             refs.setReference(virtualEl)
             return autoUpdate(virtualEl, refs.floating.current, update);
         }
-        }, [visible, update, x, y]);
+        }, [visible, update, x, y, virtualEl]);
 
 //close on outside click
         useEffect(() => {
@@ -54,7 +53,6 @@ const ContextMenu = ({file, x, y, visible, onClose, inTrashView, handleStar, han
        style={floatingStyles}
        className='absolute bg-white z-50 p-2 rounded-xl border shadow-lg w-48 animate-fade-in'
       >
-             
       {inTrashView ? (
         <>
           <p
@@ -77,7 +75,7 @@ const ContextMenu = ({file, x, y, visible, onClose, inTrashView, handleStar, han
           </p>
         </>
       ) : (
-        <>
+       <>
           {filter !== 'trashed' && (
             <p
               onClick={() => {
@@ -89,6 +87,15 @@ const ContextMenu = ({file, x, y, visible, onClose, inTrashView, handleStar, han
               {file.isStarred ? 'Unstar' : 'Star'}
             </p>
           )}
+          <p
+            onClick={() => {
+              setShareFile(file);
+              onClose();
+            }}
+             className="text-sm px-3 py-2 hover:bg-blue-100 rounded-sm cursor-pointer transition text-left"
+            >
+            Share
+          </p>
           <p
             onClick={() => {
               onRename(file);
@@ -114,4 +121,4 @@ const ContextMenu = ({file, x, y, visible, onClose, inTrashView, handleStar, han
     </>
         )
     }
-    export default ContextMenu;
+    export default ContextMenu; 

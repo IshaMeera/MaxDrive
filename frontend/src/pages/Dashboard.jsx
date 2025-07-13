@@ -49,39 +49,6 @@ const Dashboard = () => {
    const searchedFiles = filteredFiles.filter(file =>
     file.filename.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // const refetchFolders = async () => {
-  //   try{
-  //   const res = await fetch(`${BASE_URL}/api/folders`,{
-  //     credentials: "include"
-  //   });
-  //   if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-    
-  //   const data = await res.json();
-  //   setFolders(data);
-  //   }catch(err){
-  //     console.error('Error fetching folders:', err);
-  //     }
-  //  };
-
-  //  useEffect(() =>{
-  //   refetchFolders();
-  //  }, []);
-
-  // useEffect(()=>{
-  //   const fetchCustomFolder = async()=>{
-  //     try{
-  //       const res = await fetch(`${BASE_URL}/api/folders`,{
-  //         credentials: "include"
-  //       });
-  //       const data = await res.json();
-  //       setCustomFolders(data); //array
-  //     }catch(err){
-  //       console.error('Failed to fetch folders', err);
-  //     }
-  //   }
-  //   fetchCustomFolder();
-  // }, []);
    
   const handleCreateFolder = async() =>{
     if(!folderName.trim()) return;
