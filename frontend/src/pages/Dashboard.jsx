@@ -51,6 +51,7 @@ const Dashboard = () => {
     formData.append("folder", folderId);
     formData.append("customFolder", folderId); // if used by backend
   }
+  console.log("Folder:", folderId);
     console.log("Uploading to folder ID:", folderId);
     for (let pair of formData.entries()) {
     console.log(pair[0]+ ': ' + pair[1]);
@@ -64,7 +65,11 @@ const Dashboard = () => {
       const result = await response.json();
       if (response.ok) {
         toast.success("File uploaded successfully!");
-        await refetchFiles(currentFolderId);
+        await refetchFiles(folderId);
+        console.log("Refetching files after upload");
+        setCurrentFolderId(folderId); // Update current folder ID after upload
+        console.log("File uploaded:", result);
+        console.log("CurrentFolderId:", currentFolderId);
       } else {
         toast.error("An error occurred during uplaod.");
         console.error("Upload error:", result.message);
@@ -104,6 +109,7 @@ const Dashboard = () => {
   const handleUploadToFolder = (folderId) =>{
     if(fileInputRef.current){
       fileInputRef.current.click();
+      console.log("File input clicked for folder ID:", folderId);
       setCurrentFolderId(folderId);
     }
   }

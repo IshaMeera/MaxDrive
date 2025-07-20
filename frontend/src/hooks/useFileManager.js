@@ -102,6 +102,7 @@ const useFileManager = (filter = all) => {
         if(!folderRes.ok) throw new Error('Failed to fetch folders');
         const foldersData = await folderRes.json();
         setCustomFolders(foldersData);
+        console.log("Fetched folders:", foldersData);
 
       }catch(err){
        if(err.name === 'AbortError'){
