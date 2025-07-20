@@ -91,6 +91,18 @@ const useFileManager = (filter = all) => {
           return false;
         })
         setFilteredFiles(filtered);
+        console.log("Filter:", filterValue);
+        console.log("All Data:", allData);
+        console.log("Filtered Data:", filtered);
+
+        //fetch folders
+        const folderRes = await fetch(`${BASE_URL}/api/folders`,{
+          credentials: 'include'
+        });
+        if(!folderRes.ok) throw new Error('Failed to fetch folders');
+        const foldersData = await folderRes.json();
+        setCustomFolders(foldersData);
+
       }catch(err){
        if(err.name === 'AbortError'){
         console.log('Fetch aborted');
@@ -187,7 +199,7 @@ useEffect(()=>{
       return () => controller.abort();
     }, [filter]); //runs on first mount n filter changes
 
- return{files: filteredFiles, setAllFiles, loading, error, autoFolders, rawFiles, setRawFiles, setFilteredFiles,
+ return{files: filteredFiles, folders: customFolders, setCustomFolders, setAllFiles, loading, error, autoFolders, rawFiles, setRawFiles, setFilteredFiles,
   handleStar, handleTrash, refetchFiles, filteredFiles, handleRestore, handleDeletePermanent};
  }
 

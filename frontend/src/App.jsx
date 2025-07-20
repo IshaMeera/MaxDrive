@@ -2,8 +2,6 @@ import React from 'react'
 import './App.css'
 import { Routes, Route } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
-// import TestComponent from '@/components/TestComponent'
-import FileUpload from '@/pages/FileUpload'
 import Dashboard from '@/pages/Dashboard'
 import 'react-toastify/dist/ReactToastify.css'
 import { Slide } from 'react-toastify'
@@ -14,8 +12,7 @@ function App() {
   return (
     <>
     <Routes>
-      <Route path='/' element={<FileUpload/>}/>
-      <Route path='/upload' element={<FileUpload/>}/>
+      <Route path='/' element={<Dashboard/>}/>
       <Route path='/dashboard' element={<Dashboard/>}/>
     </Routes>
 

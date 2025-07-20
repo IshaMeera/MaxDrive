@@ -12,6 +12,11 @@ const folderSchema = new mongoose.Schema(
             required: true,
             index: true,
     },
+        parentFolder:{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Folder',
+            default: null, //rootby default
+        }
  }, {
         timestamps: true, //autogenerate createdAt and updatedAt
     });

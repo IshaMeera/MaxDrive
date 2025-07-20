@@ -27,7 +27,7 @@ router.get('/', async (req,res)=>{
     if (trash === 'true') query.isTrashed = true;
 
     // Fallback: If no filters, return all non-deleted files
-    if (!type && !starred && !trash) {
+    if (!type && starred !== 'true' && trash !== 'true') {
       query.isTrashed = { $ne: true };  // Optional: Exclude trashed files by default
     }
     console.log("Query built for Mongo:", JSON.stringify(query, null, 2));
@@ -38,20 +38,6 @@ router.get('/', async (req,res)=>{
     console.error("Error fetching files:", error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
-});
-
-//GET files with optional filters
-router.get("/", async(req, res)=>{
-    const {starred, trashed} = req.query;
-
-    let filter = {
-      sessionID: req.sessionID
-    };
-    if(starred === 'true') filter.isStarred = true;
-    if(trashed === 'true') filter.isTrashed = true;
-
-    const files = await File.find(filter);
-    res.json(files);
 });
 
 // PATCH to toggle star

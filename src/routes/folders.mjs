@@ -11,8 +11,17 @@ router.get('/', async(req, res)=>{
             req.session.created = true;
             console.log('Session initialized:', req.sessionID);
         }
-
-        const folders = await Folder.find({sessionID: req.sessionID}).sort({createdAt: -1});
+        const {parent} = req.query;
+        let filter = {
+            sessionID: req.sessionID,
+        }   
+        if(parent === null || parent === undefined){
+            filter.parentFolder = null;
+        }else{
+            filter.parentFolder = parent;
+        }
+        console.log("SessionID on request:", req.sessionID);
+        const folders = await Folder.find(filter).sort({createdAt: -1});
         res.json(folders);
     }catch(err){
         res.status(500).json({err: 'Failed to fetch folders'});
@@ -21,13 +30,19 @@ router.get('/', async(req, res)=>{
 
 router.post('/', async(req, res)=>{
     try{
-        const {name} = req.body;
+        const {name, parentFolder} = req.body;
 
         if(!name || name.trim()===''){
             return res.status(400).json({error: 'Folder name is required'});
         }
-        const exists = await Folder.findOne({name: {$regex: `^${name}`, $options: 'i'},
-                                    sessionID: req.sessionID});
+
+        let filter = {
+            name: {$regex: `^${name}`, $options: 'i'},
+            sessionID: req.sessionID,
+            parentFolder: parentFolder || null
+        }
+
+        const exists = await Folder.findOne(filter);
         if(exists){
             return res.status(409).json({message: 'Folder already exists'});
         }
@@ -35,6 +50,7 @@ router.post('/', async(req, res)=>{
         const folder = new Folder({
             name: name.trim(),
             sessionID: req.sessionID,
+            parentFolder: parentFolder || null,
         });
 
         await folder.save();

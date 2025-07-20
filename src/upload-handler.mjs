@@ -139,7 +139,22 @@ router.post("/uploads", upload.single("myFile"), async (req, res) => {
       await fsPromises.rename(uploadedFilePath, newPath);
       console.log("File moved successfully.");
 
-      const isValidCustomFolder = mongoose.Types.ObjectId.isValid(req.body.customFolder);
+      const isValidCustomFolder = false;
+      let customFolderId = req.body.customFolder;
+
+      if(
+        customFolderId && 
+        customFolderId !== 'undefined' &&
+        mongoose.Types.ObjectId.isValid(customFolderId)
+      ){
+        const folderExists = await Folder.findOne({
+          _id: customFolderId,
+          sessionID: req.sessionID,
+        });
+        if(folderExists){
+          isValidCustomFolder = true;
+        }
+      }
 
       const savedFile = new File({
         filename: req.file.filename,
@@ -152,6 +167,8 @@ router.post("/uploads", upload.single("myFile"), async (req, res) => {
         sessionID: req.sessionID,
       });
       await savedFile.save();
+      console.log("File saved to database:", savedFile);
+      console.log("SessionID:", req.sessionID);
 
     //   console.log("Saving file to DB with:", {
     //   filename: req.file.filename,

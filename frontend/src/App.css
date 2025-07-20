@@ -48,3 +48,7 @@
     max-width: 400px;
   }
 }
+.dropdown-menu-content {
+    max-height: none !important;
+    overflow: visible !important;
+}

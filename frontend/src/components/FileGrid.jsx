@@ -1,26 +1,27 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { BASE_URL } from "@/lib/config";
 import EmptyFolder from "@/assets/EmptyFolder.svg?react";
-import { Image, Video, FileText, FileArchive, File, FileSpreadsheet} from "lucide-react";
+import { Image, Video, FileText, FileArchive, File, FileSpreadsheet, MoreVertical } from "lucide-react";
 import useFileManager from "@/hooks/useFileManager";
 import ContextMenu from "./ContextMenu";
-import { FaFilePdf, FaFileArchive, FaFileExcel, FaFileAlt, FaStar, FaRegStar} from "react-icons/fa";
+import { FaFilePdf, FaFileArchive, FaFileExcel, FaFileAlt, FaStar,FaRegStar } from "react-icons/fa";
+import { FaFolder } from "react-icons/fa";
 import { PiDotsThreeVerticalBold } from "react-icons/pi";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useCustomFolders } from "@/context/CustomFolderContext";
 import ShareModel from "./ShareModel";
 
-const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table", setViewMode = "",}) => {
+const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table", setViewMode = "", setCurrentFolderId}) => {
   const linkRefs = useRef({});
-  const { files, handleStar, handleTrash, handleRestore, 
-    handleDeletePermanent, setRawFiles, setAllFiles, setFilteredFiles} = useFileManager(filter);
-
+  const {files, folders, handleStar, handleTrash, handleRestore, handleDeletePermanent,
+     setRawFiles, setAllFiles, setFilteredFiles } = useFileManager(filter);
   const [renamingFileId, setRenamingFileId] = useState(null);
   const [newFileName, setNewFileName] = useState("");
-  const [contextMenu, setContextMenu] = useState({visible: false, x: 0, y: 0, file: null});
+  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, file: null });
   const [shareFile, setShareFile] = useState(null);
+  const {customFolders, setCustomFolders} = useCustomFolders();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -68,13 +69,13 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
     file.filename.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const filesWithPreview = searchedFiles.map((file) => {
-    if(!file.filename){
-      console.warn('Missing file name or file:', file);
+    if (!file.filename) {
+      console.warn("Missing file name or file:", file);
       return file;
     }
     const extenstion = file.filename.split(".").pop().toLowerCase();
     // let folder = file.folder || file.physicalFolder || file.previousFolder || 'others';
-   
+
     return {
       ...file,
       extenstion,
@@ -104,6 +105,35 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
         return <Video className="w-4 h-4 text-purple-400 mr-2" />;
       default:
         return <File className="w-4 h-4 text-muted-foreground mr-2" />;
+    }
+  };
+  const handleOpenFolder = async (folder) => {
+    try {
+      const folderRes = await fetch(
+        `${BASE_URL}/api/folders?parent=${folder._id}`
+      );
+      const contentType = folderRes.headers.get("content-type");
+
+      if (!folderRes.ok || !contentType.includes("application/json")) {
+        const text = await folderRes.text();
+        throw new Error("Expected JSON but got: " + text.slice(0, 100));
+      }
+
+      const subFolders = await folderRes.json();
+
+      const filesRes = await fetch(
+        `${BASE_URL}/api/files?folder=${folder._id}`
+      );
+      if (!filesRes.ok) throw new Error("Failed to fetch files");
+      const files = await filesRes.json();
+
+      setCurrentFolderId(folder);
+      setCustomFolders(subFolders);
+      setRawFiles(files);
+      setFilteredFiles(files);
+      sessionStorage.setItem("currentFolderId", folder._id);
+    } catch (error) {
+      console.error("Failed to open folder:", error);
     }
   };
 
@@ -228,21 +258,61 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
               </div>
 
               <div className="flex flex-col gap-1">
-                {filesWithPreview.length === 0 && (
-                  <p className="text-gray-500 text-sm">No files to display</p>
-                )}
+                {folders.length > 0 &&
+                  folders.map((folder) => (
+                    <div
+                      key={folder._id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenFolder(folder);
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setContextMenu({
+                          visible: true,
+                          x: e.pageX,
+                          y: e.pageY,
+                          folder,
+                        });
+                      }}
+                      className="grid grid-cols-4 gap-4 items-center p-2 rounded hover:bg-zinc-100 cursor-pointer transition"
+                    >
+                      <div className="flex items-center gap-6 col-span-1">
+                        <FaFolder className="text-gray-700" size={21} />
+                        <span className="truncate font-medium">
+                          {folder.name}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Folder
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(folder.createdAt).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-muted-foreground flex justify-end pr-4">
+                        —fillit
+                      </div>
+                    </div>
+                  ))}
+
+                {filesWithPreview.length === 0 &&
+                  folders.length ===
+                    0(
+                      <p className="text-gray-500 text-sm">
+                        No files or folders to display
+                      </p>
+                    )}
+
                 {filesWithPreview.map((file) => {
-                  if (!linkRefs.current[file._id]) {
-                    linkRefs.current[file._id] = React.createRef();
-                    console.log("Current filter in FileGrid:", filter);
-                  }
                   return (
-                    <Card
+                    <div
                       key={file._id}
                       onClick={() => onFileClick(file)}
-                      onDoubleClick={() =>
-                        linkRefs.current[file._id]?.current?.click()
-                      }
+                      onDoubleClick={() => {
+                        if (linkRefs.current[file._id]?.current) {
+                          linkRefs.current[file._id].current.click();
+                        }
+                      }}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         setContextMenu({
@@ -252,60 +322,57 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
                           file,
                         });
                       }}
-                      className="px-1 py-1 bg-card text-card-foreground 
-                  shadow-sm hover:bg-muted transition-colors duration-150 hover:bg-blue-200 cursor-pointer"
+                      className="grid grid-cols-4 gap-4 items-center p-2 rounded hover:bg-zinc-100 cursor-pointer transition"
                     >
-                      <div className="flex items-center justify-between px-4 py-1">
-                        <div className="truncate text-sm text-black font-medium max-w-[70%]">
-                          <div className="flex items-center space-x-2 text-sm text-black font-medium">
-                            {!isTrashView &&
-                              (file.isStarred ? (
-                                <FaStar
-                                  size={18}
-                                  className="text-yellow-400 cursor-pointer hover:text-yellow-300 transition-colors duration-200 ease-in-out"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleStar(file._id);
-                                  }}
-                                />
-                              ) : (
-                                <FaRegStar
-                                  size={18}
-                                  className="text-zinc-400 cursor-pointer hover:text-yellow-300 transition-colors duration-200 ease-in-out"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleStar(file._id);
-                                  }}
-                                />
-                              ))}
-                            {getFileIcon(file.filename)}
-                            <div className="grid grid-cols-4 gap-4 items-center w-full">
-                              {renderRenameInput(file)}
-                              <div className="text-xs text-muted-foreground">
-                                {file.extLabel}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {new Date(file.uploadDate).toLocaleString()}
-                              </div>
-                            </div>
-                          </div>
-                          {/* Hidden anchor to trigger programmatically */}
-                          <a
-                            href={file.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            ref={linkRefs.current[file._id]}
-                            onClick={(e) => e.stopPropagation()}
-                            className="hidden"
-                          >
-                            Hidden link
-                          </a>
-                        </div>
-                        <div className="text-xs text-muted-foreground ">
-                          {(file.size / (1024 * 1024)).toFixed(2)} MB
-                        </div>
+                      <div className="flex items-center gap-2 col-span-1">
+                        {!isTrashView &&
+                          (file.isStarred ? (
+                            <FaStar
+                              size={18}
+                              className="text-blue-400 cursor-pointer hover:text-blue-300 transition-colors duration-200 ease-in-out"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStar(file._id);
+                              }}
+                            />
+                          ) : (
+                            <FaRegStar
+                              size={18}
+                              className="text-zinc-400 cursor-pointer hover:text-blue-300 transition-colors duration-200 ease-in-out"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStar(file._id);
+                              }}
+                            />
+                          ))}
+                        {getFileIcon(file.filename)}
+
+                        {renderRenameInput(file)}
                       </div>
-                    </Card>
+
+                      <div className="text-xs text-muted-foreground col-span-1">
+                        {file.extLabel}
+                      </div>
+
+                      <div className="text-xs text-muted-foreground col-span-1">
+                        {new Date(file.uploadDate).toLocaleString()}
+                      </div>
+
+                      <div className="text-xs text-muted-foreground flex justify-end pr-4 col-span-1">
+                        {(file.size / (1024 * 1024)).toFixed(2)} MB
+                      </div>
+                      {/* Hidden anchor to trigger programmatically */}
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        ref={linkRefs.current[file._id]}
+                        onClick={(e) => e.stopPropagation()}
+                        className="hidden"
+                      >
+                        Hidden link
+                      </a>
+                    </div>
                   );
                 })}
               </div>
@@ -314,25 +381,67 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
         </>
       ) : (
         // preview mode
-        <div className="relative">
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-6">
-            {filesWithPreview.map((file) => (
+        <div className="relative grid grid-cols-2 md:grid-cols-6 gap-6">
+          {folders.length > 0 &&
+            folders.map((folder) => (
               <div
-                key={file._id}
-                onClick={() => onFileClick(file)}
+                key={folder._id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenFolder(folder);
+                }}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   setContextMenu({
                     visible: true,
                     x: e.pageX,
                     y: e.pageY,
-                    zIndex: 99999,
-                    file,
+                    folder,
                   });
                 }}
-                className="group relative flex flex-col w-full rounded-xl overflow-hidden shadow hover:shadow-lg transition bg-white hover:scale-105"
+                className="group relative flex flex-col items-center justify-center w-full rounded-xl p-4 bg-blue-50 shadow hover:scale-105 transition"
               >
-                <div className="relative w-full h-32">  
+                <FaFolder className="text-gray-600" size={25} />
+                <span className="truncate mt-2 font-medium">{folder.name}</span>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setContextMenu({
+                      visible: true,
+                      x: e.pageX,
+                      y: e.pageY,
+                      folder,
+                    });
+                  }}
+                  className="absolute top-2 right-2 text-gray-600 hover:text-black"
+                >
+                  <MoreVertical size={16} />
+                </button>
+              </div>
+            ))}
+          {filesWithPreview.map((file) => (
+            <div
+              key={file._id}
+              onClick={() => onFileClick(file)}
+              onDoubleClick={() => {
+                if (linkRefs.current[file._id]?.current) {
+                  linkRefs.current[file._id].current.click();
+                }
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setContextMenu({
+                  visible: true,
+                  x: e.pageX,
+                  y: e.pageY,
+                  zIndex: 99999,
+                  file,
+                });
+              }}
+              className="group relative flex flex-col w-full rounded-xl overflow-hidden shadow hover:shadow-lg transition bg-white hover:scale-105"
+            >
+              <div className="relative w-full h-32">
                 {file.mimetype.startsWith("image/") && (
                   <img
                     src={file.url}
@@ -357,7 +466,7 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
                         <FaFilePdf size={48} className="text-red-400" />
                       )}
                       {file.mimetype.includes("zip") && (
-                        <FaFileArchive size={48} className="text-yellow-400" />
+                        <FaFileArchive size={48} className="text-blue-400" />
                       )}
                       {(file.mimetype.includes("excel") ||
                         file.mimetype.includes("spreadsheet")) && (
@@ -371,7 +480,7 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
                         )}
                     </div>
                   )}
-                   <button
+                <button
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -388,11 +497,12 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
                 >
                   <PiDotsThreeVerticalBold size={18} />
                 </button>
-                </div>
-                <div className="flex items-center justify-center p-2 w-full">{renderRenameInput(file)}</div>
               </div>
-            ))}
-          </div>
+              <div className="flex items-center justify-center p-2 w-full">
+                {renderRenameInput(file)}
+              </div>
+            </div>
+          ))}
         </div>
       )}
       <ContextMenu
@@ -414,9 +524,8 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
         setShareFile={setShareFile}
       />
       {shareFile && (
-      <ShareModel file={shareFile} onClose={()=> setShareFile(null)} />
-       )}
-
+        <ShareModel file={shareFile} onClose={() => setShareFile(null)} />
+      )}
     </div>
   );
 };
