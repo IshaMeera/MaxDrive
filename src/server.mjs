@@ -28,25 +28,12 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/download/:folder/:filename', (req,res)=>{
-  const filePath = path.join(__dirname, 'uploads', req.params.folder, req.params.filename);
-
-  res.download(filePath, req.params.filename, (err)=>{
-    if(err){
-      console.error('Download error:', err);
-      return res.status(404).send('File not found.');
-    }
-  })
-})
-
 app.use(cors({
   origin: isDev ? 'http://localhost:5173' : undefined,
   credentials: isDev?true:false,
 })); // Enable CORS for all routes
 // This allows the frontend to make requests to the backend without CORS issues
 console.log("isDev:", isDev);
-
-createUploadDirs(); // upload dir creation during server start
 
 app.use(express.json());
 
@@ -61,6 +48,30 @@ app.use(session({
     sameSite: 'lax'
   }
 }))
+
+
+createUploadDirs(); // upload dir creation during server start
+
+app.get('/api/session', (req, res) => {
+  if(!req.session.created){
+    req.session.created = true;
+    console.log('Session initialized:', req.sessionID);
+  }else{
+    console.log('Session already exists, existing session:', req.sessionID);
+  }
+  res.json({ sessionID: req.sessionID });
+})
+
+app.get('/download/:folder/:filename', (req,res)=>{
+  const filePath = path.join(__dirname, 'uploads', req.params.folder, req.params.filename);
+
+  res.download(filePath, req.params.filename, (err)=>{
+    if(err){
+      console.error('Download error:', err);
+      return res.status(404).send('File not found.');
+    }
+  })
+})
 
 app.use("/api", uploadRoutes);
 app.use('/api/files', filesRoutes);

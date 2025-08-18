@@ -1,31 +1,63 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BASE_URL } from "@/lib/config";
 import { all } from "axios";
 import { useCustomFolders } from '@/context/CustomFolderContext';
 
 const useFileManager = (filter = all) => {
     const {customFolders, setCustomFolders} = useCustomFolders();
-    const [allFiles, setAllFiles] = useState([]);
+    const [_allFiles, setAllFiles] = useState([]);
     const [filteredFiles, setFilteredFiles] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [loading, _setLoading] = useState(true);
+    const [error, _setError] = useState(null);
     const [rawFiles, setRawFiles] = useState([]);
 
     const autoFolders = ["images", "pdf", "videos", "documents", "excel", "zips", "archives", "csv", "others"];
 
-    useEffect(() =>{
-  // console.log("useEffect triggered in useFileManager")
-  const establishSessionAndFetch = async() =>{
-    if(customFolders.length === 0){
-      const foldersRes = await fetch(`${BASE_URL}/api/folders`,{
-        credentials: 'include'
-      });
-      const foldersData = await foldersRes.json();
-      setCustomFolders(foldersData);    
+  useEffect(()=> {
+    const establishSessionAndFetch = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/session`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+        if(!res.ok) throw new Error('Failed to establish session');
+
+        const data = await res.json();
+        console.log("Session established:",data);
+      } catch (err) {
+        console.error("Error establishing session:", err);
+      }
     }
-  }
     establishSessionAndFetch();
   },[]);
+
+  //fetch folders
+        const fetchFolders = useCallback(async(parentFolderId) => {
+          try{
+
+            const parentParam = parentFolderId ? parentFolderId : "null";
+
+            const res = await fetch(
+              `${BASE_URL}/api/folders?parent=${encodeURIComponent(parentParam)}`,
+              { credentials: 'include' });
+
+            if(!res.ok) throw new Error('Failed to fetch folders');
+            
+            const foldersData = await res.json();
+            setCustomFolders(foldersData);
+            //console.log("Fetched folders:", foldersData);
+          }catch(err){
+          console.error('Error fetching folders:', err.message);
+        }
+      },[setCustomFolders]);
+      useEffect(()=> {
+        fetchFolders();
+      },[]) //to supress eslint warning wrapped fetchFolders in useCallback
+
+  useEffect(() => {
+      console.log("rawFiles in useFileManager:", rawFiles);
+      console.log("filteredFiles in useFileManager:", filteredFiles);
+    }, [rawFiles, filteredFiles]);
 
     const refetchFiles = async(controller = new AbortController()) => {
     const normalizedFilter = typeof filter === 'string'    
@@ -91,30 +123,28 @@ const useFileManager = (filter = all) => {
           return false;
         })
         setFilteredFiles(filtered);
-        console.log("Filter:", filterValue);
-        console.log("All Data:", allData);
-        console.log("Filtered Data:", filtered);
-
-        //fetch folders
-        const folderRes = await fetch(`${BASE_URL}/api/folders`,{
-          credentials: 'include'
-        });
-        if(!folderRes.ok) throw new Error('Failed to fetch folders');
-        const foldersData = await folderRes.json();
-        setCustomFolders(foldersData);
-        console.log("Fetched folders:", foldersData);
-
       }catch(err){
-       if(err.name === 'AbortError'){
-        console.log('Fetch aborted');
+        if(err.name === 'AbortError'){
+          console.warn('file fetching req was aborted');
       }else{
-        console.error('Fetch error:', err.message);
+        console.error('Error fetching files:', err.message);
       }
     }
-    };
-
+  }
+    useEffect(()=>{
+      const controller = new AbortController();
+      refetchFiles(controller);
+      return () => controller.abort();
+    }, [filter]); //runs on first mount n filter changes
+        
 const handleStar = async(fileId) =>{
     try{
+        const targetFile = rawFiles.find(file => file._id === fileId);
+        if(!targetFile){
+          console.error(`File with ID ${fileId} not found in rawFiles`);
+          return;
+        }
+
         const updatedRawFile = rawFiles.map(file =>
           file._id === fileId ? {...file, isStarred: !file.isStarred} : file
         );
@@ -194,14 +224,10 @@ const handleDeletePermanent = async(fileId) =>{
   console.error('Permanent delete error:', err);
 }
 }
-useEffect(()=>{
-      const controller = new AbortController();
-      refetchFiles(controller);
-      return () => controller.abort();
-    }, [filter]); //runs on first mount n filter changes
 
- return{files: filteredFiles, folders: customFolders, setCustomFolders, setAllFiles, loading, error, autoFolders, rawFiles, setRawFiles, setFilteredFiles,
-  handleStar, handleTrash, refetchFiles, filteredFiles, handleRestore, handleDeletePermanent};
+ return{files: filteredFiles, folders: customFolders, setCustomFolders, setAllFiles, 
+  loading, error, autoFolders, rawFiles, setRawFiles, setFilteredFiles,handleStar, 
+  handleTrash, refetchFiles, fetchFolders, filteredFiles, handleRestore, handleDeletePermanent};
  }
 
 export default useFileManager; 

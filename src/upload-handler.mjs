@@ -6,6 +6,7 @@ import {detectFileType, allowedMimeTypes} from "../utils/detectFileType.mjs"
 import fsPromises from "fs/promises";  //for promise async fs functions
 import fs from "fs"; //for sync fs functions
 import File from "../models/file.mjs";
+import Folder from "../models/folder.mjs";
 import mongoose from "mongoose";
 
 const router = express.Router();
@@ -139,14 +140,12 @@ router.post("/uploads", upload.single("myFile"), async (req, res) => {
       await fsPromises.rename(uploadedFilePath, newPath);
       console.log("File moved successfully.");
 
-      const isValidCustomFolder = false;
       let customFolderId = req.body.customFolder;
+      let isValidCustomFolder = false;
+      console.log("Custom folder ID receivec to upload-handler.mjs:", customFolderId);
 
       if(
-        customFolderId && 
-        customFolderId !== 'undefined' &&
-        mongoose.Types.ObjectId.isValid(customFolderId)
-      ){
+        customFolderId && mongoose.Types.ObjectId.isValid(customFolderId)){
         const folderExists = await Folder.findOne({
           _id: customFolderId,
           sessionID: req.sessionID,
@@ -162,11 +161,12 @@ router.post("/uploads", upload.single("myFile"), async (req, res) => {
         size: req.file.size,
         uploadDate: new Date(),
         physicalFolder: targetFolder || 'others',  //field tat saves files to pdf,img,etc
-        folder: null,
-        customFolder: isValidCustomFolder ? req.body.customFolder : null,
+        folder: req.body.folder || null,
+        customFolder: isValidCustomFolder ? customFolderId : null,
         sessionID: req.sessionID,
       });
       await savedFile.save();
+      console.log("Saving file with customFolder:", savedFile.customFolder);
       console.log("File saved to database:", savedFile);
       console.log("SessionID:", req.sessionID);
 

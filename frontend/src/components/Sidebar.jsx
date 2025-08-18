@@ -4,7 +4,7 @@ import { TbFolderPlus } from "react-icons/tb";
 import { MdOutlineUploadFile } from "react-icons/md";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
-const SideBar = ({ onFilterChange, onCreateFolder, handleUploadToFolder})=>{
+const SideBar = ({ onFilterChange, onCreateFolder, handleUploadToFolder, currentFolder})=>{
 
   const actions = [
     {label: "New", icon: <Plus size={30}/>},
@@ -33,9 +33,10 @@ const SideBar = ({ onFilterChange, onCreateFolder, handleUploadToFolder})=>{
                   New Folder
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={handleUploadToFolder}>
+                <DropdownMenuItem 
+                  onClick={() => handleUploadToFolder({_id: currentFolder._id})}>
                   <MdOutlineUploadFile size={16} className="mr-3 h-4 w-4 opacity-50" />
-                  File Upload
+                    File Upload {currentFolder?.name ? `${currentFolder.name}` : "Root"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
            </DropdownMenu>

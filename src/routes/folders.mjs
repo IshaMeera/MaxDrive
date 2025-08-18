@@ -3,25 +3,30 @@ import Folder from '../../models/folder.mjs';
 
 const router = express.Router();
 
+router.use((req, res, next) => {
+    console.log(`Incoming request to folders route: ${req.method} ${req.url}`);
+    next();
+})
+
 router.get('/', async(req, res)=>{
     try{
         console.log('Incoming req:', req.url);
-
-        if(!req.session.created){
-            req.session.created = true;
-            console.log('Session initialized:', req.sessionID);
-        }
-        const {parent} = req.query;
-        let filter = {
-            sessionID: req.sessionID,
-        }   
-        if(parent === null || parent === undefined){
-            filter.parentFolder = null;
-        }else{
-            filter.parentFolder = parent;
-        }
         console.log("SessionID on request:", req.sessionID);
-        const folders = await Folder.find(filter).sort({createdAt: -1});
+
+        // if(!req.session.created){
+        //     req.session.created = true;
+        //     console.log('Session initialized:', req.sessionID);
+        // }
+        let {parent} = req.query;
+        let filter = { sessionID: req.sessionID };   
+        if(parent && parent !== 'null' && parent !== ""){
+            filter.parentFolder = parent;
+        }else{
+            filter.parentFolder = null;
+        }
+        
+        const folders = await Folder.find(filter).sort({createdAt: 1});
+        console.log("FETCHED FOLDERS:", folders);
         res.json(folders);
     }catch(err){
         res.status(500).json({err: 'Failed to fetch folders'});

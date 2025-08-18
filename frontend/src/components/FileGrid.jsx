@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useCustomFolders } from "@/context/CustomFolderContext";
 import ShareModel from "./ShareModel";
 
-const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table", setViewMode = "", setCurrentFolderId}) => {
+const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table", setViewMode = "", setCurrentFolder}) => {
   const linkRefs = useRef({});
   const {files, folders, handleStar, handleTrash, handleRestore, handleDeletePermanent,
      setRawFiles, setAllFiles, setFilteredFiles } = useFileManager(filter);
@@ -21,7 +21,7 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
   const [newFileName, setNewFileName] = useState("");
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, file: null });
   const [shareFile, setShareFile] = useState(null);
-  const {customFolders, setCustomFolders} = useCustomFolders();
+  const {_customFolders, setCustomFolders} = useCustomFolders();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -107,11 +107,22 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
         return <File className="w-4 h-4 text-muted-foreground mr-2" />;
     }
   };
+
   const handleOpenFolder = async (folder) => {
-    try {
-      const folderRes = await fetch(
-        `${BASE_URL}/api/folders?parent=${folder._id}`
-      );
+    console.log("Folder object in handleOpenFolder:", folder);
+
+      let folderUrl = `${BASE_URL}/api/folders`;
+      let filesUrl = `${BASE_URL}/api/files`;
+
+      if(folder && folder._id) {
+        folderUrl += `?parent=${folder._id}`;
+        filesUrl += `?folder=${folder._id}`;  
+      }
+      console.log("Fetching subfolders from:", folderUrl);
+      console.log("Fetching files from:", filesUrl);
+
+      try {
+      const folderRes = await fetch(folderUrl);
       const contentType = folderRes.headers.get("content-type");
 
       if (!folderRes.ok || !contentType.includes("application/json")) {
@@ -121,17 +132,24 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
 
       const subFolders = await folderRes.json();
 
-      const filesRes = await fetch(
-        `${BASE_URL}/api/files?folder=${folder._id}`
-      );
+      const filesRes = await fetch(filesUrl);
       if (!filesRes.ok) throw new Error("Failed to fetch files");
       const files = await filesRes.json();
 
-      setCurrentFolderId(folder);
+      console.log("Subfolders fetched:", subFolders);
+      console.log("Files fetched:", files);
+
+      console.log("Files fetched from backend:", files);
+
+      setCurrentFolder(folder || null);
       setCustomFolders(subFolders);
       setRawFiles(files);
       setFilteredFiles(files);
-      sessionStorage.setItem("currentFolderId", folder._id);
+      sessionStorage.setItem("currentFolder", folder._id || "root");
+
+      console.log("Setting rawFiles to:", files);
+      console.log("Setting filteredFiles to:", files);
+
     } catch (error) {
       console.error("Failed to open folder:", error);
     }

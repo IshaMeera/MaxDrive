@@ -2,37 +2,46 @@ import express from "express";
 import File from "../../models/file.mjs"; 
 import path from 'path';
 import fs from 'fs/promises';
+import mongoose from "mongoose";
 
 const router = express.Router();
 const uploadDir = path.join(process.cwd(),'uploads');
 
 //Get all files
 router.get('/', async (req,res)=>{
+    
     try {
-    const { type, starred, trash } = req.query;
-    console.log('Incoming request:', req.url);
+    console.log('/api/files endpoint hit');
+    console.log('Incoming request:', req.query);
 
-    if(!req.session.created){
-      req.session.created = true;
-      console.log('Session initialized:', req.sessionID)
-    }
-    
-    let query = {
-      sessionID: req.sessionID
-    };  
-    
+    const { type, starred, trash, folder } = req.query;
+
+    let filter = { sessionID: req.sessionID};
+
+    if(folder && mongoose.Types.ObjectId.isValid(folder)){
+      filter.$or = [
+        {customFolder: new mongoose.Types.ObjectId(folder)},
+        {folder: new mongoose.Types.ObjectId(folder)}
+        ];
+      }else if(!folder){
+        filter. $or = [
+        {customFolder: null},
+        {folder: null}
+        ];
+      }
+
     //applying filter based on the query parameter
-    if (type) query.physicalFolder = type;
-    if (starred === 'true') query.isStarred = true;
-    if (trash === 'true') query.isTrashed = true;
+    if (type) filter.physicalFolder = type;
+    if (starred === 'true') filter.isStarred = true;
+    if (trash === 'true') filter.isTrashed = true;
 
     // Fallback: If no filters, return all non-deleted files
     if (!type && starred !== 'true' && trash !== 'true') {
-      query.isTrashed = { $ne: true };  // Optional: Exclude trashed files by default
+      filter.isTrashed = { $ne: true };  // Optional: Exclude trashed files by default
     }
-    console.log("Query built for Mongo:", JSON.stringify(query, null, 2));
+    console.log("Final mongo filter:", JSON.stringify(filter, null, 2));
 
-    const files = await File.find(query);
+    const files = await File.find(filter).sort({uploadDate: -1});
     res.json(files);
   } catch (error) {
     console.error("Error fetching files:", error.message);
@@ -69,8 +78,6 @@ router.patch('/:id/trash', async(req, res)=>{
       if(!file) return res.status(404).json({error: 'File not found'});
 
       file.isTrashed = true;    
-
-      file.isTrashed = true;
       file.previousFolder = file.physicalFolder;
       file.physicalFolder = 'trash';
       file.folder = null;
