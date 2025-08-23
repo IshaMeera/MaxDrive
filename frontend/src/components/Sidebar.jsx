@@ -34,10 +34,14 @@ const SideBar = ({ onFilterChange, onCreateFolder, handleUploadToFolder, current
                 </DropdownMenuItem>
 
                 <DropdownMenuItem 
-                  onClick={() => handleUploadToFolder({_id: currentFolder._id})}>
+                  onClick={() => handleUploadToFolder(
+                    currentFolder 
+                      ? { _id: currentFolder._id, name: currentFolder.name} 
+                      : null
+               )}>
                   <MdOutlineUploadFile size={16} className="mr-3 h-4 w-4 opacity-50" />
                     File Upload {currentFolder?.name ? `${currentFolder.name}` : "Root"}
-                </DropdownMenuItem>
+                </DropdownMenuItem> 
               </DropdownMenuContent>
            </DropdownMenu>
           ) : (

@@ -9,7 +9,11 @@ const FolderGrid = ({ folders=[], selected, onSelect }) => {
         {folders.map((folder) => (
           <Card
             key={folder._id}
-            onClick={() => onSelect(folder)}//folder obj
+            onClick={() => onSelect({
+              type: "custom",
+              _id: folder._id,
+              name: folder.name,
+            })}//filter obj
             className={`p-4 rounded cursor-pointer text-center transition-all duration-200
          ${selected === folder.name
         ? 'bg-blue-600 text-white'

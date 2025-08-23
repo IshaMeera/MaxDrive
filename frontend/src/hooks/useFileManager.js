@@ -32,20 +32,22 @@ const useFileManager = (filter = all) => {
   },[]);
 
   //fetch folders
-        const fetchFolders = useCallback(async(parentFolderId) => {
+        const fetchFolders = useCallback(async(parentFolderId = null) => {
           try{
 
-            const parentParam = parentFolderId ? parentFolderId : "null";
+            let url = `${BASE_URL}/api/folders`;
 
-            const res = await fetch(
-              `${BASE_URL}/api/folders?parent=${encodeURIComponent(parentParam)}`,
-              { credentials: 'include' });
+            if(parentFolderId){
+              //inside a folder -> fetch subfolders of that folder
+              url += `?parent=${encodeURIComponent(parentFolderId)}`;
+            }
+
+            const res = await fetch(url, { credentials: 'include' });
 
             if(!res.ok) throw new Error('Failed to fetch folders');
             
             const foldersData = await res.json();
-            setCustomFolders(foldersData);
-            //console.log("Fetched folders:", foldersData);
+            setCustomFolders(foldersData);  
           }catch(err){
           console.error('Error fetching folders:', err.message);
         }
@@ -59,7 +61,8 @@ const useFileManager = (filter = all) => {
       console.log("filteredFiles in useFileManager:", filteredFiles);
     }, [rawFiles, filteredFiles]);
 
-    const refetchFiles = async(controller = new AbortController()) => {
+  //refetch files
+    const refetchFiles = async(folderID = null, controller = new AbortController()) => {
     const normalizedFilter = typeof filter === 'string'    
        ?filter.toLowerCase().trim()
        :(filter?.name?.toLowerCase().trim() || 'all');
@@ -67,62 +70,76 @@ const useFileManager = (filter = all) => {
 
       let url = `${BASE_URL}/api/files`;
 
+      //append folder ID if present
+      if(typeof folderID === "string" && folderID.trim() !== ""){
+        url += `?customFolder=${folderID}`;
+      }
+
       // const filtered = all;
 
       if (normalizedFilter === "starred") {
-        url += '?starred=true';
+        url += folderID ? `&starred=true` : `starred=true`;
       } else if (normalizedFilter === "trashed") {
-        url += '?trash=true';
+        url += folderID ? `&trash=true` : `?trash=true`;
       } else if (normalizedFilter === "all" || normalizedFilter === "View all files"){
         //Do ntng, default will return all the non-trashed filter
       } else if (
         ["images", "pdf", "videos", "documents", "excel", "zips", "archives", "csv", "others"].includes(normalizedFilter)
       ) {
-        url += `?type=${normalizedFilter}`;
+        url += folderID ? `&type=${normalizedFilter}` : `?type=${normalizedFilter}`;
       }else{
         console.log("Filter did not match any condition");
       }
 
       try{
         const response = await fetch(url, {
+          method: "GET",
           signal: controller.signal,
           credentials: "include"
         });
         
         if(!response.ok) throw new Error('Failed tp fetch files');
+        
         const allData = await response.json();                    //console.log('Filters:', filter);  console.log('Files:', files);  console.log('Fetching url:', url);        
         
         setAllFiles(allData);  
         
-        const filterValue = filter?.name || filter; 
-
-        if(filterValue.toLowerCase() === 'recent files'){
-          const recentSorted = [...allData]
-            .filter(file => !file.isTrashed)
-            .sort((a,b)=> new Date(b.uploadDate)-new Date(a.uploadDate));
-            setFilteredFiles(recentSorted);
-            return;
-        }
+        const filterValue = filter?.name || filter;
         const normalizedFilter = filterValue.toLowerCase(); 
-        const filtered = allData.filter(file =>{
-          if(file.isTrashed && normalizedFilter !== 'trashed') return false;
+        
+        let filtered = [...allData];
 
-          if(normalizedFilter === 'trashed') return file.isTrashed;
+        if(normalizedFilter === "recent files"){
+          filtered = filtered
+            .filter(file => !file.isTrashed)
+            .sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+        } else if (normalizedFilter === "trashed") {
+          filtered = filtered.filter(file => file.isTrashed);
 
-          if(normalizedFilter === 'starred') return file.isStarred && !file.isTrashed;
+        } else if (normalizedFilter === "starred") {
+          filtered = filtered.filter(file => file.isStarred && !file.isTrashed);
+        
+        }else if (autoFolders.includes(normalizedFilter)) {
+          filtered = filtered.filter(
+            file =>
+              file.physicalFolder?.toLowerCase().trim() === normalizedFilter.trim() &&
+              !file.isTrashed
+          );
 
-          if(autoFolders.includes(normalizedFilter)){
-            return file.physicalFolder?.toLowerCase().trim() === normalizedFilter.trim() && !file.isTrashed;
-          }
-          if(typeof filter === 'object' && filter.type === 'custom'){
-            return file.customFolder === filter._id && !file.isTrashed;
-          }
-          if(normalizedFilter === 'all'){
-            return !file.isTrashed;
-          }
-          return false;
-        })
+          } else if (typeof filter === "object" && filter.type === "custom") {
+          filtered = filtered.filter(
+            file => file.customFolder === filter._id && !file.isTrashed
+          );
+
+        } else if (normalizedFilter === "all" || normalizedFilter === "view all files") {
+          filtered = filtered.filter(file => !file.isTrashed);
+        } else {
+          // fallback - no matching filter
+          filtered = filtered.filter(file => !file.isTrashed);
+        }
+
         setFilteredFiles(filtered);
+        
       }catch(err){
         if(err.name === 'AbortError'){
           console.warn('file fetching req was aborted');
@@ -131,11 +148,13 @@ const useFileManager = (filter = all) => {
       }
     }
   }
-    useEffect(()=>{
+   useEffect(()=>{
       const controller = new AbortController();
-      refetchFiles(controller);
+      
+      const folderID = (typeof filter === 'object' && filter.type === 'custom') ? filter._id : null;
+      refetchFiles(folderID, controller);
       return () => controller.abort();
-    }, [filter]); //runs on first mount n filter changes
+    }, [filter, customFolders]); //runs on first mount n filter changes
         
 const handleStar = async(fileId) =>{
     try{

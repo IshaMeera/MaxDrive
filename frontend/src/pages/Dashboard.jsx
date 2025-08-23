@@ -23,7 +23,7 @@ const Dashboard = () => {
   const [newFolderName, setNewFolderName] = useState("");
   const [viewMode, setViewMode] = useState("table");
   const fileInputRef = useRef(null);
-  const [currentFolder, setCurrentFolder] = useState("");
+  const [currentFolder, setCurrentFolder] = useState(null);
   const [filter, setFilter] = useState(() => {
     try {
       const saved = sessionStorage.getItem("selectedFilter");
@@ -44,13 +44,18 @@ const Dashboard = () => {
 
   const handleUpload = async (file, folderId) => {  
   const formData = new FormData();
+  
   console.log("folderId type:", typeof folderId, folderId);
 
-    if (folderId && folderId!== "undefined") {
+    //append oly if really have folderId(not null/undefined/""/empty)
+    if (folderId) {
     formData.append("customFolder", folderId.toString()); //folderId is a string
-    }
     console.log("Uploading to folder ID:", folderId);
-
+    }else{
+      formData.append("customFolder", ""); //explicitly mark as empty for root
+      console.log("Uploading to root folder");
+    }
+    
     formData.append("myFile", file);
     
     try {
@@ -59,12 +64,18 @@ const Dashboard = () => {
         body: formData,
         credentials: "include",
       });
+
       const result = await response.json();
+
       if (response.ok) {
         toast.success("File uploaded successfully!");
-        await refetchFiles(folderId);
+
+        await refetchFiles(folderId || null); //if null, refetch root files
+
         console.log("Refetching files after upload");
+
         setCurrentFolder(folderId); //store string
+        
         console.log("File input clicked for folder ID:", folderId);
         console.log("File uploaded:", result);
       } else {
@@ -86,7 +97,10 @@ const Dashboard = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: folderName.trim() }),
+        body: JSON.stringify({ 
+          name: folderName.trim(),
+          parentFolder: currentFolder || null, //send current folder id or null 
+        }),
       });
       if (res.status === 409) {
         setShowDuplicateDialog(true);
@@ -110,46 +124,38 @@ const Dashboard = () => {
   },[]);
 
   const handleUploadToFolder = (folder) =>{
-    console.log("Folder ID in handleUploadToFolder:", folder);
-    setCurrentFolder(folder?._id || null); //store oly the id not the whole object
+    const folderId = folder?._id || null;
+
+    console.log("Folder ID in handleUploadToFolder:", folderId);
+    setCurrentFolder(folderId); //store oly the id,null for root
+
     setTimeout(()=>{
     if(fileInputRef.current){
       fileInputRef.current.click();
-      console.log("File input clicked for folder ID:", folder?._id);
+      console.log("File input clicked for folder ID:", folderId);
     }
     }, 0)
   }
+    useEffect(() => {
+      if (!showFolderDialog) {
+        setFolderName("");
+      }
+    }, [showFolderDialog]);
 
-  //   useEffect(() => {
-  //   const fetchFolders = async () => {
-  //     try {
-  //       const res = await fetch(`${BASE_URL}/api/folders`,{
-  //         credentials: "include"
-  //       });
-  //       const data = await res.json();
-  //       setCustomFolders(data);
-  //     } catch (err) {
-  //       console.error("Failed to fetch folders", err);
-  //     }
-  //   };
-  //   fetchFolders();
-  //   // useState setters are always stable (setCustomFolders) safe to use in useEffect without adding in deps
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps 
-  // }, []);
- 
-  useEffect(() => {
-    if (!showFolderDialog) {
-      setFolderName("");
-    }
-  }, [showFolderDialog]);
+    useEffect(() => {
+      if (!showDuplicateDialog) {
+        setNewFolderName("");
+        setRenamingFolderId(null);
+      }
+    }, [showDuplicateDialog]);
 
-  useEffect(() => {
-    if (!showDuplicateDialog) {
-      setNewFolderName("");
-      setRenamingFolderId(null);
-    }
-  }, [showDuplicateDialog]);
+  const handleOpenFolder = (folderObj) => {
+    console.log("Opening folder:", folderObj);
 
+    setFilter(folderObj); //{type:"custom", _id, name
+    setCurrentFolder(folderObj ? {_id: folderObj._id, name: folderObj.name} : null); //store object or null
+  }
+  
   const _handleRename = async (folderId) => {
     const trimmedName = newFolderName.trim();
     if (!trimmedName) return;
@@ -229,18 +235,13 @@ const Dashboard = () => {
           }}
           className="hidden"
         />
-        {/* {currentFolder ? (
-  <h2> Inside folder: {currentFolder.name}</h2> 
-) : (
-  <h2> You are in the root</h2> 
-)} */}
-
         <main className="flex-1 p-0">
           <div>
             <FolderGrid
               folders={stableFolders}
               selected={filter?.name || filter}
               onSelect={(folder) => handleUploadToFolder(folder)} //folder obj
+              handleOpenFolder={handleOpenFolder}
             />
 
             <FileGrid
@@ -251,6 +252,7 @@ const Dashboard = () => {
               setViewMode={setViewMode}
               currentFolder={currentFolder}
               setCurrentFolder={setCurrentFolder}
+              handleOpenFolder={handleOpenFolder}
             />
           </div>
 

@@ -13,13 +13,10 @@ router.get('/', async(req, res)=>{
         console.log('Incoming req:', req.url);
         console.log("SessionID on request:", req.sessionID);
 
-        // if(!req.session.created){
-        //     req.session.created = true;
-        //     console.log('Session initialized:', req.sessionID);
-        // }
         let {parent} = req.query;
-        let filter = { sessionID: req.sessionID };   
-        if(parent && parent !== 'null' && parent !== ""){
+        let filter = { sessionID: req.sessionID };
+
+        if(parent){
             filter.parentFolder = parent;
         }else{
             filter.parentFolder = null;

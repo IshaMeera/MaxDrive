@@ -14,32 +14,46 @@ router.get('/', async (req,res)=>{
     console.log('/api/files endpoint hit');
     console.log('Incoming request:', req.query);
 
-    const { type, starred, trash, folder } = req.query;
+    const { type, starred, trash, folder, customFolder } = req.query;
 
     let filter = { sessionID: req.sessionID};
 
-    if(folder && mongoose.Types.ObjectId.isValid(folder)){
-      filter.$or = [
-        {customFolder: new mongoose.Types.ObjectId(folder)},
-        {folder: new mongoose.Types.ObjectId(folder)}
-        ];
-      }else if(!folder){
-        filter. $or = [
-        {customFolder: null},
-        {folder: null}
-        ];
+    if(customFolder){
+      try{
+        filter.customFolder = new mongoose.Types.ObjectId(customFolder);
+      }catch(err){
+        console.error('Invalid customFolder ID:', customFolder, err);
+        return res.status(400).json({error: 'Invalid customFolder ID'});
       }
-
-    //applying filter based on the query parameter
-    if (type) filter.physicalFolder = type;
-    if (starred === 'true') filter.isStarred = true;
-    if (trash === 'true') filter.isTrashed = true;
-
-    // Fallback: If no filters, return all non-deleted files
-    if (!type && starred !== 'true' && trash !== 'true') {
-      filter.isTrashed = { $ne: true };  // Optional: Exclude trashed files by default
+    }else{
+      filter.customFolder = null;
     }
-    console.log("Final mongo filter:", JSON.stringify(filter, null, 2));
+    if(folder){
+     try{
+      filter.folder = new mongoose.Types.ObjectId(folder);
+     }catch(err){
+      console.error('Invalid folder ID:', folder, err);
+      return res.status(400).json({error: 'Invalid folder ID'});
+     }
+    }else{
+      filter.folder = null;
+    }
+
+    //root files
+    if(!folder && !customFolder){
+      filter.customFolder = null;
+      filter.folder = null;
+    }
+    //applying filter based on the query parameter
+    if (type) filter.physicalFolder = String(type).toLowerCase();
+    if (starred === 'true') filter.isStarred = true;
+    if (trash === 'true') {
+      filter.isTrashed = true;
+    }else{
+      filter.isTrashed = { $ne: true }; // Exclude trashed files by default
+    }
+
+    console.log("Final mongo filter:", filter);
 
     const files = await File.find(filter).sort({uploadDate: -1});
     res.json(files);

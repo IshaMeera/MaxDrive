@@ -170,11 +170,6 @@ router.post("/uploads", upload.single("myFile"), async (req, res) => {
       console.log("File saved to database:", savedFile);
       console.log("SessionID:", req.sessionID);
 
-    //   console.log("Saving file to DB with:", {
-    //   filename: req.file.filename,
-    //   physicalFolder: targetFolder,
-    // });
-
       res.status(200).json({
         message: "File uploaded successfully",
         filePath: newPath,

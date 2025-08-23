@@ -10,10 +10,9 @@ import { FaFolder } from "react-icons/fa";
 import { PiDotsThreeVerticalBold } from "react-icons/pi";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { useCustomFolders } from "@/context/CustomFolderContext";
 import ShareModel from "./ShareModel";
 
-const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table", setViewMode = "", setCurrentFolder}) => {
+const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table", setViewMode = "", handleOpenFolder}) => {
   const linkRefs = useRef({});
   const {files, folders, handleStar, handleTrash, handleRestore, handleDeletePermanent,
      setRawFiles, setAllFiles, setFilteredFiles } = useFileManager(filter);
@@ -21,7 +20,6 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
   const [newFileName, setNewFileName] = useState("");
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, file: null });
   const [shareFile, setShareFile] = useState(null);
-  const {_customFolders, setCustomFolders} = useCustomFolders();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -105,53 +103,6 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
         return <Video className="w-4 h-4 text-purple-400 mr-2" />;
       default:
         return <File className="w-4 h-4 text-muted-foreground mr-2" />;
-    }
-  };
-
-  const handleOpenFolder = async (folder) => {
-    console.log("Folder object in handleOpenFolder:", folder);
-
-      let folderUrl = `${BASE_URL}/api/folders`;
-      let filesUrl = `${BASE_URL}/api/files`;
-
-      if(folder && folder._id) {
-        folderUrl += `?parent=${folder._id}`;
-        filesUrl += `?folder=${folder._id}`;  
-      }
-      console.log("Fetching subfolders from:", folderUrl);
-      console.log("Fetching files from:", filesUrl);
-
-      try {
-      const folderRes = await fetch(folderUrl);
-      const contentType = folderRes.headers.get("content-type");
-
-      if (!folderRes.ok || !contentType.includes("application/json")) {
-        const text = await folderRes.text();
-        throw new Error("Expected JSON but got: " + text.slice(0, 100));
-      }
-
-      const subFolders = await folderRes.json();
-
-      const filesRes = await fetch(filesUrl);
-      if (!filesRes.ok) throw new Error("Failed to fetch files");
-      const files = await filesRes.json();
-
-      console.log("Subfolders fetched:", subFolders);
-      console.log("Files fetched:", files);
-
-      console.log("Files fetched from backend:", files);
-
-      setCurrentFolder(folder || null);
-      setCustomFolders(subFolders);
-      setRawFiles(files);
-      setFilteredFiles(files);
-      sessionStorage.setItem("currentFolder", folder._id || "root");
-
-      console.log("Setting rawFiles to:", files);
-      console.log("Setting filteredFiles to:", files);
-
-    } catch (error) {
-      console.error("Failed to open folder:", error);
     }
   };
 
@@ -282,7 +233,11 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
                       key={folder._id}
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleOpenFolder(folder);
+                        handleOpenFolder({
+                          type: "custom",
+                          _id: folder._id,
+                          name: folder.name,
+                        });
                       }}
                       onContextMenu={(e) => {
                         e.preventDefault();
@@ -312,14 +267,6 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
                       </div>
                     </div>
                   ))}
-
-                {filesWithPreview.length === 0 &&
-                  folders.length ===
-                    0(
-                      <p className="text-gray-500 text-sm">
-                        No files or folders to display
-                      </p>
-                    )}
 
                 {filesWithPreview.map((file) => {
                   return (
@@ -406,7 +353,11 @@ const FileGrid = ({filter = "", searchTerm = "", onFileClick, viewMode = "table"
                 key={folder._id}
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleOpenFolder(folder);
+                  handleOpenFolder({
+                    type: "custom",
+                    _id: folder._id,
+                    name: folder.name,
+                  });
                 }}
                 onContextMenu={(e) => {
                   e.preventDefault();
