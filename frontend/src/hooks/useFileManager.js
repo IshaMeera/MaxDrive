@@ -33,6 +33,7 @@ const useFileManager = (filter = all) => {
 
   //fetch folders
         const fetchFolders = useCallback(async(parentFolderId = null) => {
+          console.log("Fetching folders for parent ID:", parentFolderId);
           try{
 
             let url = `${BASE_URL}/api/folders`;
@@ -43,10 +44,10 @@ const useFileManager = (filter = all) => {
             }
 
             const res = await fetch(url, { credentials: 'include' });
-
             if(!res.ok) throw new Error('Failed to fetch folders');
             
             const foldersData = await res.json();
+            console.log("Fetched folders for parent:", parentFolderId, foldersData);
             setCustomFolders(foldersData);  
           }catch(err){
           console.error('Error fetching folders:', err.message);

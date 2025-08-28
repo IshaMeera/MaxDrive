@@ -28,22 +28,22 @@ router.get('/', async (req,res)=>{
     }else{
       filter.customFolder = null;
     }
-    if(folder){
-     try{
-      filter.folder = new mongoose.Types.ObjectId(folder);
-     }catch(err){
-      console.error('Invalid folder ID:', folder, err);
-      return res.status(400).json({error: 'Invalid folder ID'});
-     }
-    }else{
-      filter.folder = null;
-    }
+    // if(folder){
+    //  try{
+    //   filter.folder = new mongoose.Types.ObjectId(folder);
+    //  }catch(err){
+    //   console.error('Invalid folder ID:', folder, err);
+    //   return res.status(400).json({error: 'Invalid folder ID'});
+    //  }
+    // }else{
+    //   filter.folder = null;
+    // }
 
     //root files
-    if(!folder && !customFolder){
-      filter.customFolder = null;
-      filter.folder = null;
-    }
+    // if(!folder && !customFolder){
+    //   filter.customFolder = null;
+    //   filter.folder = null;
+    // }
     //applying filter based on the query parameter
     if (type) filter.physicalFolder = String(type).toLowerCase();
     if (starred === 'true') filter.isStarred = true;

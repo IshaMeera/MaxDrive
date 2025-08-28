@@ -154,6 +154,12 @@ const Dashboard = () => {
 
     setFilter(folderObj); //{type:"custom", _id, name
     setCurrentFolder(folderObj ? {_id: folderObj._id, name: folderObj.name} : null); //store object or null
+
+    if(folderObj && folderObj._id){
+      fetchFolders(folderObj._id); //fetch subfolders
+  }else{
+      fetchFolders(null); //fetch root folders
+  }
   }
   
   const _handleRename = async (folderId) => {

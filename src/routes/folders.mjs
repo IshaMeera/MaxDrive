@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Folder from '../../models/folder.mjs';
 
 const router = express.Router();
@@ -17,7 +18,13 @@ router.get('/', async(req, res)=>{
         let filter = { sessionID: req.sessionID };
 
         if(parent){
-            filter.parentFolder = parent;
+            try{
+                filter.parentFolder = new mongoose.Types.ObjectId(parent);
+                filter._id = { $ne: parent }; // Exclude the current folder itself
+            }catch(err){
+                console.error("Invalid parent folder ID[ObjectId]:", err);
+                return res.status(400).json({error: 'Invalid parent folder ID'});
+            }
         }else{
             filter.parentFolder = null;
         }
